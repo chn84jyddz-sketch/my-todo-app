@@ -705,18 +705,163 @@
 
     <script>
         const firebaseConfig = {
-  apiKey: "AIzaSyCtOhHCStSiKKuhNdHJhsCwpZAp_MCiMrg",
-  authDomain: "my-todo-app-68448.firebaseapp.com",
-  projectId: "my-todo-app-68448",
-  storageBucket: "my-todo-app-68448.firebasestorage.app",
-  messagingSenderId: "49497251580",
-  appId: "1:49497251580:web:6ebcea283bd091e1990179",
-  measurementId: "G-BFXJW7HPXS"
-};
+            apiKey: "AIzaSyCtOhHCStSiKKuhNdHJhsCwpZAp_MCiMrg",
+            authDomain: "my-todo-app-68448.firebaseapp.com",
+            projectId: "my-todo-app-68448",
+            storageBucket: "my-todo-app-68448.firebasestorage.app",
+            messagingSenderId: "49497251580",
+            appId: "1:49497251580:web:6ebcea283bd091e1990179",
+            measurementId: "G-BFXJW7HPXS"
+        };
+
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // ---- Firestore同期の状態 ----
+        let cloudReady = false;
+        let cloudUser = null;
+        let cloudUnsubscribe = null;
+        let cloudWriteTimer = null;
+        let applyingCloudData = false;
+        let syncGeneration = 0;
+
+        function showSyncError(message) {
+            console.error(message);
+            if (window.ons && ons.notification) {
+                ons.notification.toast('クラウド同期に失敗しました。Firestoreのルールを確認してください。', { timeout: 3500 });
+            }
+        }
+
+        function mergeById(cloudItems, localItems) {
+            const result = Array.isArray(cloudItems) ? cloudItems.slice() : [];
+            const seen = new Set(result.map(function (item) { return item && item.id; }).filter(Boolean));
+            (Array.isArray(localItems) ? localItems : []).forEach(function (item) {
+                if (item && item.id && !seen.has(item.id)) {
+                    result.push(item);
+                    seen.add(item.id);
+                }
+            });
+            return result;
+        }
+
+        function localDataSnapshot() {
+            return {
+                tasks: tasks,
+                genres: genres,
+                memos: memos,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+        }
+
+        function saveLocalData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+            localStorage.setItem(GENRE_KEY, JSON.stringify(genres));
+            localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
+        }
+
+        function scheduleCloudSave() {
+            if (!cloudReady || !cloudUser || applyingCloudData) return;
+            clearTimeout(cloudWriteTimer);
+            cloudWriteTimer = setTimeout(async function () {
+                try {
+                    await db.collection('users').doc(cloudUser.uid).set(localDataSnapshot(), { merge: true });
+                } catch (error) {
+                    showSyncError('Firestore save failed: ' + error.code);
+                }
+            }, 250);
+        }
+
+        async function startCloudSync(user) {
+            const thisGeneration = ++syncGeneration;
+            cloudReady = false;
+            cloudUser = user;
+            if (cloudUnsubscribe) {
+                cloudUnsubscribe();
+                cloudUnsubscribe = null;
+            }
+            clearTimeout(cloudWriteTimer);
+            if (!user) {
+                cloudUser = null;
+                return;
+            }
+
+            const docRef = db.collection('users').doc(user.uid);
+            const migrationKey = 'onsenTodoCloudMigrated_' + user.uid;
+            try {
+                const doc = await docRef.get();
+                if (thisGeneration !== syncGeneration || !auth.currentUser || auth.currentUser.uid !== user.uid) return;
+
+                const localTasks = loadTasks();
+                const localGenres = loadGenres();
+                const localMemos = loadMemos();
+                let data;
+
+                if (doc.exists) {
+                    const remote = doc.data() || {};
+                    // 各端末のローカルデータは、端末ごとに一度だけクラウドへ統合する。
+                    if (localStorage.getItem(migrationKey) !== '1') {
+                        data = {
+                            tasks: mergeById(remote.tasks, localTasks),
+                            genres: mergeById(remote.genres, localGenres),
+                            memos: mergeById(remote.memos, localMemos)
+                        };
+                        await docRef.set({
+                            tasks: data.tasks,
+                            genres: data.genres,
+                            memos: data.memos,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                        localStorage.setItem(migrationKey, '1');
+                    } else {
+                        data = {
+                            tasks: Array.isArray(remote.tasks) ? remote.tasks : [],
+                            genres: Array.isArray(remote.genres) ? remote.genres : [],
+                            memos: Array.isArray(remote.memos) ? remote.memos : []
+                        };
+                    }
+                } else {
+                    data = { tasks: localTasks, genres: localGenres, memos: localMemos };
+                    await docRef.set({
+                        tasks: data.tasks,
+                        genres: data.genres,
+                        memos: data.memos,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                    localStorage.setItem(migrationKey, '1');
+                }
+
+                if (thisGeneration !== syncGeneration) return;
+                applyingCloudData = true;
+                tasks = Array.isArray(data.tasks) ? data.tasks : [];
+                genres = Array.isArray(data.genres) ? data.genres : [];
+                memos = Array.isArray(data.memos) ? data.memos : [];
+                saveLocalData();
+                renderTasks();
+                applyingCloudData = false;
+                cloudReady = true;
+
+                cloudUnsubscribe = docRef.onSnapshot(function (snapshot) {
+                    if (!snapshot.exists || thisGeneration !== syncGeneration) return;
+                    const remote = snapshot.data() || {};
+                    applyingCloudData = true;
+                    tasks = Array.isArray(remote.tasks) ? remote.tasks : [];
+                    genres = Array.isArray(remote.genres) ? remote.genres : [];
+                    memos = Array.isArray(remote.memos) ? remote.memos : [];
+                    try { saveLocalData(); } catch (e) { console.error('Local save failed', e); }
+                    renderTasks();
+                    applyingCloudData = false;
+                    cloudReady = true;
+                }, function (error) {
+                    cloudReady = false;
+                    showSyncError('Firestore listener failed: ' + error.code);
+                });
+            } catch (error) {
+                applyingCloudData = false;
+                cloudReady = false;
+                showSyncError('Firestore sync failed: ' + error.code);
+            }
+        }
 
         // ---- Firebaseメールアドレス認証 ----
         function setAuthMessage(message) {
@@ -782,10 +927,12 @@
                 screen.style.display = 'none';
                 accountBar.style.display = 'block';
                 document.getElementById('signedInEmail').textContent = user.email || 'ログイン中';
+                startCloudSync(user);
             } else {
                 screen.style.display = 'flex';
                 accountBar.style.display = 'none';
                 document.getElementById('signedInEmail').textContent = '';
+                startCloudSync(null);
             }
         });
 
@@ -828,6 +975,7 @@
         function saveTasks() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+                scheduleCloudSave();
             } catch (e) {
                 ons.notification.toast('保存できませんでした', { timeout: 2000 });
             }
@@ -864,6 +1012,7 @@
         function saveGenres() {
             try {
                 localStorage.setItem(GENRE_KEY, JSON.stringify(genres));
+                scheduleCloudSave();
             } catch (e) {
                 ons.notification.toast('保存できませんでした', { timeout: 2000 });
             }
@@ -1092,6 +1241,7 @@
         function saveMemos() {
             try {
                 localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
+                scheduleCloudSave();
             } catch (e) {
                 ons.notification.toast('保存できませんでした', { timeout: 2000 });
             }
