@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="https://unpkg.com/onsenui@2.12.8/css/onsenui.css">
     <link rel="stylesheet" href="https://unpkg.com/onsenui@2.12.8/css/onsen-css-components.min.css">
     <script src="https://unpkg.com/onsenui@2.12.8/js/onsenui.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore-compat.js"></script>
     <style>
         html {
             -webkit-text-size-adjust: 100%;
@@ -403,10 +406,88 @@
             justify-content: flex-end;
             gap: 8px;
         }
+
+        /* Firebaseログイン画面 */
+        #authScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            box-sizing: border-box;
+            background: #f5f7fa;
+        }
+        #authCard {
+            width: 100%;
+            max-width: 360px;
+            padding: 24px;
+            box-sizing: border-box;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 8px 28px rgba(0,0,0,.10);
+        }
+        #authCard h2 { margin: 0 0 8px; text-align: center; }
+        #authCard p { color: #536273; line-height: 1.6; }
+        #authCard label { display: block; margin: 14px 0 5px; font-size: 14px; }
+        #authCard input {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px;
+            border: 1px solid #cbd5e0;
+            border-radius: 7px;
+            font-size: 16px;
+        }
+        #authCard button {
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px;
+            border: 0;
+            border-radius: 7px;
+            background: #1e88e5;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        #authCard button.secondary {
+            background: #edf2f7;
+            color: #2d3748;
+        }
+        #authMessage { min-height: 1.5em; font-size: 13px; overflow-wrap: anywhere; }
+        #accountBar {
+            display: none;
+            padding: 6px 12px;
+            background: #edf2f7;
+            color: #2d3748;
+            font-size: 12px;
+            text-align: right;
+        }
     </style>
 </head>
 
 <body>
+
+    <!-- Firebaseログイン画面 -->
+    <div id="authScreen">
+        <div id="authCard">
+            <h2>ToDoリスト</h2>
+            <p>メールアドレスとパスワードで登録、またはログインしてください。</p>
+            <label for="authEmail">メールアドレス</label>
+            <input id="authEmail" type="email" autocomplete="email" placeholder="name@example.com">
+            <label for="authPassword">パスワード（6文字以上）</label>
+            <input id="authPassword" type="password" autocomplete="current-password" placeholder="パスワード">
+            <button type="button" onclick="signInOrRegister('register')">新規登録</button>
+            <button type="button" class="secondary" onclick="signInOrRegister('login')">ログイン</button>
+            <p id="authMessage" role="status"></p>
+        </div>
+    </div>
+    <div id="accountBar">
+        <span id="signedInEmail"></span>
+        <button type="button" onclick="signOutUser()" style="width:auto;margin:0 0 0 8px;padding:5px 10px;">ログアウト</button>
+    </div>
+
     <!-- ons-splitter：左側メニューとメイン画面 -->
     <ons-splitter id="appSplitter">
         <ons-splitter-side id="sideMenu" side="left" width="260px" collapse swipeable>
@@ -623,6 +704,91 @@
     </template>
 
     <script>
+        const firebaseConfig = {
+  apiKey: "AIzaSyCtOhHCStSiKKuhNdHJhsCwpZAp_MCiMrg",
+  authDomain: "my-todo-app-68448.firebaseapp.com",
+  projectId: "my-todo-app-68448",
+  storageBucket: "my-todo-app-68448.firebasestorage.app",
+  messagingSenderId: "49497251580",
+  appId: "1:49497251580:web:6ebcea283bd091e1990179",
+  measurementId: "G-BFXJW7HPXS"
+};
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+
+        // ---- Firebaseメールアドレス認証 ----
+        function setAuthMessage(message) {
+            document.getElementById('authMessage').textContent = message;
+        }
+
+        async function signInOrRegister(mode) {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value;
+
+            if (!email || !password) {
+                setAuthMessage('メールアドレスとパスワードを入力してください。');
+                return;
+            }
+            if (mode === 'register' && password.length < 6) {
+                setAuthMessage('パスワードは6文字以上にしてください。');
+                return;
+            }
+
+            setAuthMessage('処理中です…');
+            try {
+                if (mode === 'register') {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    setAuthMessage('登録しました。');
+                } else {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    setAuthMessage('ログインしました。');
+                }
+            } catch (error) {
+                let message = '処理できませんでした。入力内容とFirebaseの設定を確認してください。';
+                if (error.code === 'auth/email-already-in-use') {
+                    message = 'このメールアドレスは登録済みです。ログインを試してください。';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = 'メールアドレスの形式を確認してください。';
+                } else if (error.code === 'auth/weak-password') {
+                    message = 'パスワードは6文字以上にしてください。';
+                } else if (error.code === 'auth/invalid-credential' ||
+                           error.code === 'auth/wrong-password' ||
+                           error.code === 'auth/user-not-found') {
+                    message = 'メールアドレスまたはパスワードを確認してください。';
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    message = 'Firebase Consoleでメール/パスワード認証を有効にしてください。';
+                } else if (error.code === 'auth/network-request-failed') {
+                    message = '通信に失敗しました。ネットワークを確認してください。';
+                }
+                setAuthMessage(message);
+                console.error('Firebase Authentication error:', error.code);
+            }
+        }
+
+        async function signOutUser() {
+            try {
+                await auth.signOut();
+            } catch (error) {
+                ons.notification.alert('ログアウトできませんでした。通信状態を確認してください。');
+            }
+        }
+
+        auth.onAuthStateChanged(function (user) {
+            const screen = document.getElementById('authScreen');
+            const accountBar = document.getElementById('accountBar');
+            if (user) {
+                screen.style.display = 'none';
+                accountBar.style.display = 'block';
+                document.getElementById('signedInEmail').textContent = user.email || 'ログイン中';
+            } else {
+                screen.style.display = 'flex';
+                accountBar.style.display = 'none';
+                document.getElementById('signedInEmail').textContent = '';
+            }
+        });
+
         const STORAGE_KEY = 'onsenTodoTasks';
 
         // ---- 保存データの読み込み（壊れていても起動できるようにする）----
