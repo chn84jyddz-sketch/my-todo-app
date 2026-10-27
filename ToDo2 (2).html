@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ToDoリスト</title>
+    <!-- バージョンを固定して、将来の更新で壊れないようにする -->
+    <link rel="stylesheet" href="https://unpkg.com/onsenui@2.12.8/css/onsenui.css">
+    <link rel="stylesheet" href="https://unpkg.com/onsenui@2.12.8/css/onsen-css-components.min.css">
+    <script src="https://unpkg.com/onsenui@2.12.8/js/onsenui.min.js"></script>
+    <style>
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            background: #f5f7fa;
+        }
+
+        /* タブが5つ並んでも収まるように */
+        .tabbar__label {
+            font-size: 12px;
+        }
+
+        .page-content {
+            padding: 12px 12px 88px;
+            /* 下側は追加ボタン(FAB)に隠れない余白 */
+        }
+
+        .intro {
+            margin: 8px 0 12px;
+            color: #536273;
+        }
+
+        .summary {
+            margin: 12px 0;
+            color: #536273;
+            font-size: 14px;
+        }
+
+        .todo-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .todo-text {
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .todo-title.completed {
+            color: #89939d;
+            text-decoration: line-through;
+        }
+
+        .todo-title.important {
+            font-weight: bold;
+        }
+
+        .important-mark {
+            color: #e53935;
+        }
+
+
+        /* カレンダー */
+        .cal-header {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .cal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 2px;
+        }
+
+        .cal-weekday {
+            padding: 4px 0;
+            text-align: center;
+            color: #718096;
+            font-size: 12px;
+        }
+
+        .cal-weekday.sun {
+            color: #e53935;
+        }
+
+        .cal-weekday.sat {
+            color: #1e88e5;
+        }
+
+        .cal-blank {
+            min-height: 44px;
+        }
+
+        .cal-day {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            min-width: 0;
+            min-height: 44px;
+            padding: 2px 0;
+            border: none;
+            border-radius: 8px;
+            background: #fff;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .cal-day.sun .cal-num {
+            color: #e53935;
+        }
+
+        .cal-day.sat .cal-num {
+            color: #1e88e5;
+        }
+
+        .cal-day.today .cal-num {
+            background: #1e88e5;
+            color: #fff;
+        }
+
+        .cal-day.selected {
+            outline: 2px solid #1e88e5;
+        }
+
+        .cal-num {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            line-height: 22px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .cal-mark {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            color: #536273;
+            font-size: 10px;
+        }
+
+        .cal-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #1e88e5;
+        }
+
+        .cal-dot.done {
+            background: #a0aec0;
+        }
+
+        .cal-dot.overdue {
+            background: #e53935;
+        }
+
+        .cal-day-heading {
+            margin: 18px 0 4px;
+            font-size: 15px;
+            color: #2d3748;
+        }
+
+        .task-due.overdue {
+            color: #e53935;
+            font-weight: bold;
+        }
+
+        .task-memo {
+            margin-top: 4px;
+            color: #4a5568;
+            font-size: 13px;
+            white-space: pre-wrap;
+        }
+
+        .todo-row {
+            gap: 8px;
+        }
+
+        .todo-row ons-button {
+            padding: 0 6px;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .field-label {
+            display: block;
+            margin: 12px 0 4px;
+            color: #536273;
+            font-size: 13px;
+        }
+
+        .dialog-body input,
+        .dialog-body textarea {
+            font-size: 16px;
+            /* 16px未満だとiPhoneで入力時に画面が拡大される */
+        }
+
+        .native-field {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            padding: 8px;
+            font-family: inherit;
+            -webkit-appearance: none;
+            appearance: none;
+            min-height: 38px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .date-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .date-row .native-field {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .task-details {
+            display: block;
+            margin-top: 3px;
+            color: #718096;
+            font-size: 12px;
+        }
+
+        .empty-message {
+            padding: 24px 12px;
+            color: #718096;
+            text-align: center;
+        }
+
+        /* メモ（箇条書き） */
+        .memo-input-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .memo-input-row .native-field {
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .memo-bullet {
+            color: #536273;
+            font-weight: bold;
+        }
+
+        .memo-text {
+            cursor: pointer;
+        }
+
+        /* ジャンル（色分け） */
+        .genre-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 4px 0 12px;
+        }
+
+        .genre-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 999px;
+            background: #fff;
+            color: #2d3748;
+            font: inherit;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .genre-chip.active {
+            border-color: transparent;
+            color: #fff;
+        }
+
+        .genre-chip .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+        }
+
+        .genre-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+            padding: 1px 8px;
+            border: none;
+            border-radius: 999px;
+            background: #edf2f7;
+            color: #4a5568;
+            font: inherit;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .genre-tag .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .genre-row-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .swatch-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 10px;
+            margin: 12px 0 18px;
+        }
+
+        .color-swatch {
+            width: 100%;
+            aspect-ratio: 1;
+            padding: 0;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .color-swatch.selected {
+            outline: 3px solid #a0aec0;
+            outline-offset: 2px;
+        }
+
+        .help-content {
+            padding: 18px;
+            line-height: 1.8;
+        }
+
+        /* 追加ダイアログ */
+        .dialog-body {
+            padding: 18px;
+            width: min(300px, calc(100vw - 72px));
+            max-width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .dialog-body h3 {
+            margin: 0 0 12px;
+        }
+
+        .dialog-body ons-input {
+            width: 100%;
+        }
+
+        .form-options {
+            margin: 14px 0 18px;
+            padding: 12px;
+            background: #f5f7fa;
+            border-radius: 10px;
+        }
+
+        .range-heading {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .form-options ons-range {
+            width: 100%;
+        }
+
+        .switch-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ons-splitter：左側メニューとメイン画面 -->
+    <ons-splitter id="appSplitter">
+        <ons-splitter-side id="sideMenu" side="left" width="260px" collapse swipeable>
+            <ons-page>
+                <ons-toolbar>
+                    <div class="center">メニュー</div>
+                </ons-toolbar>
+                <ons-list>
+                    <ons-list-item tappable onclick="openGenres()">ジャンルの管理</ons-list-item>
+                    <ons-list-item tappable onclick="openHelp()">使い方</ons-list-item>
+                    <ons-list-item tappable onclick="closeMenu()">メニューを閉じる</ons-list-item>
+                </ons-list>
+            </ons-page>
+        </ons-splitter-side>
+        <ons-splitter-content>
+            <ons-navigator id="navigator" page="home.html"></ons-navigator>
+        </ons-splitter-content>
+    </ons-splitter>
+
+    <!-- タスク追加ダイアログ（入力フォームはここ1か所だけ） -->
+    <ons-dialog id="addDialog" cancelable>
+        <div class="dialog-body">
+            <h3>新しいタスク</h3>
+            <ons-input id="taskInput" type="text" modifier="underbar" placeholder="タスクを入力" float></ons-input>
+            <label class="field-label" for="taskMemo">メモ（任意）</label>
+            <textarea id="taskMemo" class="native-field" rows="3" placeholder="詳細や持ち物など"></textarea>
+            <label class="field-label" for="taskDue">期限（任意）</label>
+            <div class="date-row">
+                <input id="taskDue" class="native-field" type="date" aria-label="期限の日付">
+                <input id="taskTime" class="native-field" type="time" aria-label="期限の時刻（任意）">
+            </div>
+            <span class="field-label">ジャンル</span>
+            <div id="addGenreBar" class="genre-bar"></div>
+            <div class="form-options">
+                <div class="range-heading">
+                    <span>優先度</span>
+                    <span><span id="priorityValue">3</span> / 5</span>
+                </div>
+                <ons-range id="priority" min="1" max="5" step="1" value="3" oninput="updatePriority()"></ons-range>
+                <label class="switch-row">
+                    <ons-switch id="important"></ons-switch>
+                    <span>重要タスクにする</span>
+                </label>
+            </div>
+            <div class="dialog-actions">
+                <ons-button modifier="quiet" onclick="closeAddDialog()">キャンセル</ons-button>
+                <ons-button onclick="addTask()">追加</ons-button>
+            </div>
+        </div>
+    </ons-dialog>
+
+    <!-- ジャンルの追加・編集ダイアログ -->
+    <ons-dialog id="genreDialog" cancelable>
+        <div class="dialog-body">
+            <h3 id="genreDialogTitle">新しいジャンル</h3>
+            <input id="genreName" class="native-field" type="text" maxlength="20" placeholder="ジャンル名（例：仕事）">
+            <span class="field-label">色</span>
+            <div id="genrePalette" class="swatch-grid"></div>
+            <div class="dialog-actions">
+                <ons-button id="genreDeleteBtn" modifier="quiet" onclick="deleteGenre()">削除</ons-button>
+                <ons-button modifier="quiet" onclick="closeGenreDialog()">キャンセル</ons-button>
+                <ons-button onclick="saveGenre()">保存</ons-button>
+            </div>
+        </div>
+    </ons-dialog>
+
+    <!-- メイン画面 -->
+    <template id="home.html">
+        <ons-page>
+            <ons-toolbar>
+                <div class="left">
+                    <ons-toolbar-button onclick="openMenu()" aria-label="メニュー">
+                        <ons-icon icon="md-menu"></ons-icon>
+                    </ons-toolbar-button>
+                </div>
+                <div class="center">ToDoリスト</div>
+            </ons-toolbar>
+
+            <!-- ons-tabbar：タスク表示を切り替える -->
+            <ons-tabbar id="filterTabs" position="top" swipeable>
+                <ons-tab label="Today" page="tab-all.html" active></ons-tab>
+                <ons-tab label="ToDo" page="tab-open.html"></ons-tab>
+                <ons-tab label="完了" page="tab-done.html"></ons-tab>
+                <ons-tab label="カレンダー" page="tab-calendar.html"></ons-tab>
+                <ons-tab label="メモ" page="tab-memo.html"></ons-tab>
+            </ons-tabbar>
+
+            <!-- タスク追加ボタン（メモタブでは隠す） -->
+            <ons-fab id="addFab" position="bottom right" onclick="openAddDialog()" aria-label="タスクを追加">
+                <ons-icon icon="md-plus"></ons-icon>
+            </ons-fab>
+        </ons-page>
+    </template>
+
+    <!-- すべてのタスク -->
+    <template id="tab-all.html">
+        <ons-page>
+            <div class="page-content">
+                <p class="intro">今日が期限のタスクです。終わったらチェックしましょう。</p>
+                <div class="genre-bar" data-genre-filter></div>
+                <div id="summaryAll" class="summary"></div>
+                <ons-list id="allList"></ons-list>
+                <div id="allEmpty" class="empty-message" hidden></div>
+            </div>
+        </ons-page>
+    </template>
+
+    <!-- 未完了のタスク -->
+    <template id="tab-open.html">
+        <ons-page>
+            <div class="page-content">
+                <p class="intro">これからやるタスクです。チェックを入れると「完了」に移ります。</p>
+                <div class="genre-bar" data-genre-filter></div>
+                <div id="summaryOpen" class="summary"></div>
+                <ons-list id="openList"></ons-list>
+                <div id="openEmpty" class="empty-message" hidden></div>
+            </div>
+        </ons-page>
+    </template>
+
+    <!-- 完了したタスク -->
+    <template id="tab-done.html">
+        <ons-page>
+            <div class="page-content">
+                <p class="intro">完了したタスクです。チェックを外すと「ToDo」に戻ります。</p>
+                <div class="genre-bar" data-genre-filter></div>
+                <div id="summaryDone" class="summary"></div>
+                <ons-list id="doneList"></ons-list>
+                <div id="doneEmpty" class="empty-message" hidden></div>
+            </div>
+        </ons-page>
+    </template>
+
+    <!-- カレンダー（月表示） -->
+    <template id="tab-calendar.html">
+        <ons-page>
+            <div class="page-content">
+                <div class="genre-bar" data-genre-filter></div>
+                <div class="cal-header">
+                    <ons-button modifier="quiet" onclick="changeMonth(-1)" aria-label="前の月">
+                        <ons-icon icon="md-chevron-left"></ons-icon>
+                    </ons-button>
+                    <span id="calTitle" class="cal-title"></span>
+                    <ons-button modifier="quiet" onclick="changeMonth(1)" aria-label="次の月">
+                        <ons-icon icon="md-chevron-right"></ons-icon>
+                    </ons-button>
+                    <ons-button modifier="light" onclick="goToday()">今日</ons-button>
+                </div>
+                <div id="calGrid" class="cal-grid"></div>
+                <h3 id="calDayHeading" class="cal-day-heading"></h3>
+                <ons-list id="calDayList"></ons-list>
+                <div id="calDayEmpty" class="empty-message" hidden></div>
+            </div>
+        </ons-page>
+    </template>
+
+    <!-- メモ（箇条書き） -->
+    <template id="tab-memo.html">
+        <ons-page>
+            <div class="page-content">
+                <p class="intro">思いついたことを箇条書きでメモできます。文をタップすると編集できます。</p>
+                <div class="memo-input-row">
+                    <input id="memoInput" class="native-field" type="text" placeholder="メモを入力（Enterで追加）"
+                        onkeydown="if (event.key === 'Enter' && !event.isComposing) addMemo()">
+                    <ons-button onclick="addMemo()">追加</ons-button>
+                </div>
+                <ons-list id="memoList"></ons-list>
+                <div id="memoEmpty" class="empty-message" hidden></div>
+            </div>
+        </ons-page>
+    </template>
+
+    <!-- ジャンルの管理 -->
+    <template id="genres.html">
+        <ons-page>
+            <ons-toolbar>
+                <div class="left"><ons-back-button>戻る</ons-back-button></div>
+                <div class="center">ジャンルの管理</div>
+            </ons-toolbar>
+            <div class="page-content">
+                <p class="intro">「編集」で名前や色を変更、「削除」でジャンルを消せます。</p>
+                <ons-list id="genreList"></ons-list>
+                <div id="genreEmpty" class="empty-message" hidden></div>
+                <ons-button modifier="large" onclick="openGenreDialog()" style="margin-top: 16px">＋ ジャンルを追加</ons-button>
+            </div>
+        </ons-page>
+    </template>
+
+    <!-- ons-back-button：使い方ページから戻る -->
+    <template id="help.html">
+        <ons-page>
+            <ons-toolbar>
+                <div class="left"><ons-back-button>戻る</ons-back-button></div>
+                <div class="center">使い方</div>
+            </ons-toolbar>
+            <div class="help-content">
+                <h2>ToDoリストの使い方</h2>
+                <ol>
+                    <li>右下の「＋」ボタンを押します。</li>
+                    <li>タスクを書き、必要ならメモと期限（日付・時刻）を入れ、優先度を選びます。重要なタスクはスイッチをONにします。</li>
+                    <li>「追加」を押す（またはEnterキー）と登録されます。</li>
+                    <li>終わったタスクはチェックを入れます。</li>
+                    <li>タブで「Today」「ToDo」「完了」「カレンダー」「メモ」を切り替えます。「Today」には期限が今日のタスクだけが表示されます。ToDoタブでチェックを入れると、そのタスクは消えて「完了」タブに移ります。
+                    </li>
+                    <li>ジャンル（仕事・買い物など）は、名前を自分で入力し、10色から色を選んで作れます。画面上部やタスク追加画面の「＋」、またはメニューの「ジャンルの管理」から追加できます（名前・色の変更や削除は、上部の「✎
+                        編集」かメニューの「ジャンルの管理」で行えます）。上部のボタンで絞り込め、タスクのジャンル名をタップすると付け替えられます。</li>
+                    <li>カレンダーでは、期限があるタスクの日に印が付きます。日付を押すと、その日のタスクが下に表示されます（印の青は未完了、赤は期限切れ、灰色は完了済み）。</li>
+                    <li>「メモ」タブでは、箇条書きのメモを自由に追加できます。文をタップすると編集、「削除」で消せます。</li>
+                    <li>不要なタスクは「削除」を押します。</li>
+                </ol>
+                <p>重要なタスクは上に、同じ重要度なら優先度の高い順に並びます。</p>
+            </div>
+        </ons-page>
+    </template>
+
+    <script>
+        const STORAGE_KEY = 'onsenTodoTasks';
+
+        // ---- 保存データの読み込み（壊れていても起動できるようにする）----
+        function newId() {
+            return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        }
+
+        function loadTasks() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                if (!Array.isArray(saved)) return [];
+                return saved
+                    .filter(function (t) {
+                        return t && typeof t.text === 'string' && t.text !== '';
+                    })
+                    .map(function (t) {
+                        const p = Number(t.priority);
+                        return {
+                            id: typeof t.id === 'string' ? t.id : newId(), // 旧データにはIDを付与
+                            text: t.text,
+                            completed: Boolean(t.completed),
+                            priority: p >= 1 && p <= 5 ? p : 3,
+                            important: Boolean(t.important),
+                            memo: typeof t.memo === 'string' ? t.memo : '',
+                            genre: typeof t.genre === 'string' ? t.genre : '',
+                            due: /^\d{4}-\d{2}-\d{2}$/.test(t.due) ? t.due : '',
+                            time: /^\d{2}:\d{2}$/.test(t.time) ? t.time : ''
+                        };
+                    });
+            } catch (e) {
+                return [];
+            }
+        }
+
+        let tasks = loadTasks();
+
+        function saveTasks() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+            } catch (e) {
+                ons.notification.toast('保存できませんでした', { timeout: 2000 });
+            }
+        }
+
+        // ---- ジャンル（色分け）----
+        const GENRE_KEY = 'onsenTodoGenres';
+        const GENRE_COLORS = ['#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#5ac8fa',
+            '#007aff', '#5856d6', '#ff2d55', '#bf5af2', '#a2845e'];
+        const NO_GENRE_COLOR = '#cbd5e0';
+
+        function loadGenres() {
+            try {
+                const raw = localStorage.getItem(GENRE_KEY);
+                if (raw === null) return [];
+                const saved = JSON.parse(raw);
+                if (!Array.isArray(saved)) return [];
+                return saved
+                    .filter(function (g) { return g && typeof g.name === 'string' && g.name !== ''; })
+                    .map(function (g) {
+                        return {
+                            id: typeof g.id === 'string' ? g.id : newId(),
+                            name: g.name,
+                            color: /^#[0-9a-f]{6}$/i.test(g.color) ? g.color : GENRE_COLORS[5]
+                        };
+                    });
+            } catch (e) {
+                return [];
+            }
+        }
+
+        let genres = loadGenres();
+
+        function saveGenres() {
+            try {
+                localStorage.setItem(GENRE_KEY, JSON.stringify(genres));
+            } catch (e) {
+                ons.notification.toast('保存できませんでした', { timeout: 2000 });
+            }
+        }
+
+        let currentGenre = 'all'; // 'all'（すべて）/ 'none'（未分類）/ ジャンルID
+        let addGenre = '';        // 追加ダイアログで選択中のジャンルID
+        let editingGenreId = null;
+        let draftColor = GENRE_COLORS[5];
+
+        function genreById(id) {
+            if (!id) return null;
+            return genres.find(function (g) { return g.id === id; }) || null;
+        }
+
+        function genreColor(id) {
+            const g = genreById(id);
+            return g ? g.color : NO_GENRE_COLOR;
+        }
+
+        function matchesGenre(task) {
+            if (currentGenre === 'all') return true;
+            if (currentGenre === 'none') return !genreById(task.genre);
+            return task.genre === currentGenre;
+        }
+
+        function selectGenre(id) {
+            currentGenre = id;
+            renderTasks();
+        }
+
+        // ジャンルのボタン（絞り込み用・追加ダイアログ用で共通）
+        function makeChip(label, color, active, onClick) {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'genre-chip' + (active ? ' active' : '');
+            if (active) chip.style.background = color || '#2d3748';
+            if (color) {
+                const dot = document.createElement('span');
+                dot.className = 'dot';
+                dot.style.background = active ? '#fff' : color;
+                chip.appendChild(dot);
+            }
+            chip.appendChild(document.createTextNode(label));
+            chip.addEventListener('click', onClick);
+            return chip;
+        }
+
+        function renderGenreBars() {
+            // 各タブ上部の絞り込みバー
+            document.querySelectorAll('[data-genre-filter]').forEach(function (bar) {
+                bar.replaceChildren();
+                bar.appendChild(makeChip('すべて', null, currentGenre === 'all', function () { selectGenre('all'); }));
+                genres.forEach(function (g) {
+                    bar.appendChild(makeChip(g.name, g.color, currentGenre === g.id, function () { selectGenre(g.id); }));
+                });
+                bar.appendChild(makeChip('未分類', NO_GENRE_COLOR, currentGenre === 'none', function () { selectGenre('none'); }));
+                bar.appendChild(makeChip('＋ ジャンル', null, false, function () { openGenreDialog(); }));
+                if (genres.length > 0) {
+                    bar.appendChild(makeChip('✎ 編集', null, false, function () { openGenres(); }));
+                }
+            });
+            // 追加ダイアログのジャンル選択
+            const addBar = document.getElementById('addGenreBar');
+            if (addBar) {
+                addBar.replaceChildren();
+                addBar.appendChild(makeChip('なし', NO_GENRE_COLOR, addGenre === '', function () {
+                    addGenre = '';
+                    renderGenreBars();
+                }));
+                genres.forEach(function (g) {
+                    addBar.appendChild(makeChip(g.name, g.color, addGenre === g.id, function () {
+                        addGenre = g.id;
+                        renderGenreBars();
+                    }));
+                });
+                addBar.appendChild(makeChip('＋ 新しいジャンル', null, false, function () { openGenreDialog(); }));
+            }
+        }
+
+        function renderGenreList() {
+            const list = document.getElementById('genreList');
+            const empty = document.getElementById('genreEmpty');
+            if (!list || !empty) return; // ページ未生成のときは何もしない
+
+            list.replaceChildren();
+            empty.textContent = 'ジャンルはまだありません。下のボタンから追加できます。';
+            empty.hidden = genres.length > 0;
+            genres.forEach(function (g) {
+                const item = document.createElement('ons-list-item');
+                const row = document.createElement('div');
+                const dot = document.createElement('span');
+                const name = document.createElement('div');
+                const count = document.createElement('small');
+
+                const editBtn = document.createElement('ons-button');
+                const delBtn = document.createElement('ons-button');
+                row.className = 'todo-row';
+                dot.className = 'genre-row-dot';
+                dot.style.background = g.color;
+                name.className = 'todo-text';
+                name.textContent = g.name;
+                count.style.color = '#718096';
+                count.textContent = tasks.filter(function (t) { return t.genre === g.id; }).length + '件';
+                editBtn.setAttribute('modifier', 'quiet');
+                editBtn.textContent = '編集';
+                editBtn.addEventListener('click', function () { openGenreDialog(g.id); });
+                delBtn.setAttribute('modifier', 'quiet');
+                delBtn.textContent = '削除';
+                delBtn.addEventListener('click', function () { deleteGenre(g.id); });
+                row.append(dot, name, count, editBtn, delBtn);
+                item.appendChild(row);
+                list.appendChild(item);
+            });
+        }
+
+        function renderPalette() {
+            const palette = document.getElementById('genrePalette');
+            palette.replaceChildren();
+            GENRE_COLORS.forEach(function (color) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'color-swatch' + (color === draftColor ? ' selected' : '');
+                button.style.background = color;
+                button.setAttribute('aria-label', '色 ' + color);
+                button.addEventListener('click', function () {
+                    draftColor = color;
+                    renderPalette();
+                });
+                palette.appendChild(button);
+            });
+        }
+
+        function openGenreDialog(id) {
+            const g = genreById(id);
+            editingGenreId = g ? g.id : null;
+            draftColor = g ? g.color : GENRE_COLORS[5];
+            document.getElementById('genreDialogTitle').textContent = g ? 'ジャンルを編集' : '新しいジャンル';
+            document.getElementById('genreName').value = g ? g.name : '';
+            document.getElementById('genreDeleteBtn').style.display = g ? '' : 'none';
+            renderPalette();
+            document.getElementById('genreDialog').show();
+        }
+
+        function closeGenreDialog() {
+            document.getElementById('genreDialog').hide();
+        }
+
+        function saveGenre() {
+            const input = document.getElementById('genreName');
+            const name = input.value.trim();
+            if (name === '') {
+                ons.notification.toast('ジャンル名を入力してください', { timeout: 1800 });
+                input.focus();
+                return;
+            }
+            const g = genreById(editingGenreId);
+            if (g) {
+                g.name = name;
+                g.color = draftColor;
+            } else {
+                const created = { id: newId(), name: name, color: draftColor };
+                genres.push(created);
+                // タスク追加画面から作った場合は、そのジャンルを選んだ状態にする
+                if (document.getElementById('addDialog').visible) addGenre = created.id;
+            }
+            saveGenres();
+            renderTasks();
+            closeGenreDialog();
+        }
+
+        function deleteGenre(id) {
+            const g = genreById(id || editingGenreId);
+            if (!g) return;
+            ons.notification.confirm(
+                '「' + g.name + '」を削除しますか？ このジャンルのタスクは「未分類」になります。',
+                { buttonLabels: ['キャンセル', '削除'] }
+            ).then(function (index) {
+                if (index !== 1) return;
+                genres = genres.filter(function (x) { return x.id !== g.id; });
+                tasks.forEach(function (t) { if (t.genre === g.id) t.genre = ''; });
+                if (currentGenre === g.id) currentGenre = 'all';
+                if (addGenre === g.id) addGenre = '';
+                saveGenres();
+                saveTasks();
+                renderTasks();
+                closeGenreDialog();
+            });
+        }
+
+        // タスクのジャンルを付け替える（ジャンル名をタップ）
+        function changeTaskGenre(task) {
+            const n = genres.length;
+            ons.openActionSheet({
+                title: 'ジャンルを選ぶ',
+                cancelable: true,
+                buttons: genres.map(function (g) { return g.name; })
+                    .concat(['未分類', { label: 'キャンセル', icon: 'md-close' }])
+            }).then(function (index) {
+                if (index < 0 || index > n) return; // 外側タップ・キャンセル
+                task.genre = index < n ? genres[index].id : '';
+                saveTasks();
+                renderTasks();
+            });
+        }
+
+        // ---- メモ（箇条書き）----
+        const MEMO_KEY = 'onsenTodoMemos';
+
+        function loadMemos() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(MEMO_KEY));
+                if (!Array.isArray(saved)) return [];
+                return saved
+                    .filter(function (m) { return m && typeof m.text === 'string' && m.text !== ''; })
+                    .map(function (m) {
+                        return { id: typeof m.id === 'string' ? m.id : newId(), text: m.text };
+                    });
+            } catch (e) {
+                return [];
+            }
+        }
+
+        let memos = loadMemos();
+
+        function saveMemos() {
+            try {
+                localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
+            } catch (e) {
+                ons.notification.toast('保存できませんでした', { timeout: 2000 });
+            }
+        }
+
+        function addMemo() {
+            const input = document.getElementById('memoInput');
+            if (!input) return;
+            const text = input.value.trim();
+            if (text === '') {
+                ons.notification.toast('メモを入力してください', { timeout: 1800 });
+                input.focus();
+                return;
+            }
+            memos.push({ id: newId(), text: text });
+            input.value = '';
+            saveMemos();
+            renderMemos();
+            input.focus();
+        }
+
+        function renderMemos() {
+            const list = document.getElementById('memoList');
+            const empty = document.getElementById('memoEmpty');
+            if (!list || !empty) return; // ページ未生成のときは何もしない
+
+            list.replaceChildren();
+            if (memos.length === 0) {
+                empty.textContent = 'メモはまだありません。';
+                empty.hidden = false;
+                return;
+            }
+            empty.hidden = true;
+
+            memos.forEach(function (memo) {
+                const item = document.createElement('ons-list-item');
+                const row = document.createElement('div');
+                const bullet = document.createElement('span');
+                const text = document.createElement('div');
+                const del = document.createElement('ons-button');
+
+                row.className = 'todo-row';
+                bullet.className = 'memo-bullet';
+                bullet.textContent = '・';
+                text.className = 'todo-text memo-text';
+                text.textContent = memo.text;
+                text.addEventListener('click', function () {
+                    ons.notification.prompt('メモを編集', {
+                        defaultValue: memo.text,
+                        buttonLabels: ['キャンセル', 'OK']
+                    }).then(function (value) {
+                        const edited = value === null ? '' : value.trim();
+                        if (edited === '') return; // キャンセル・空欄は変更しない
+                        memo.text = edited;
+                        saveMemos();
+                        renderMemos();
+                    });
+                });
+
+                del.setAttribute('modifier', 'quiet');
+                del.textContent = '削除';
+                del.addEventListener('click', function () {
+                    memos = memos.filter(function (m) { return m.id !== memo.id; });
+                    saveMemos();
+                    renderMemos();
+                });
+
+                row.append(bullet, text, del);
+                item.appendChild(row);
+                list.appendChild(item);
+            });
+        }
+
+        // メモタブ（5番目）ではタスク追加ボタンを隠す
+        function updateFab() {
+            const tabs = document.getElementById('filterTabs');
+            const fab = document.getElementById('addFab');
+            if (!tabs || !fab) return;
+            if (tabs.getActiveTabIndex() === 4) fab.hide(); else fab.show();
+        }
+
+        // ---- メニュー・画面遷移 ----
+        function openMenu() {
+            document.getElementById('appSplitter').left.open();
+        }
+
+        function closeMenu() {
+            document.getElementById('appSplitter').left.close();
+        }
+
+        function openGenres() {
+            closeMenu();
+            document.getElementById('navigator').pushPage('genres.html');
+        }
+
+        function openHelp() {
+            closeMenu();
+            document.getElementById('navigator').pushPage('help.html');
+        }
+
+        // ---- 追加ダイアログ ----
+        function updatePriority() {
+            const range = document.getElementById('priority');
+            document.getElementById('priorityValue').textContent = range.value;
+        }
+
+        function openAddDialog() {
+            const dialog = document.getElementById('addDialog');
+            // 絞り込み中のジャンルを、追加時の初期値にする
+            addGenre = genreById(currentGenre) ? currentGenre : '';
+            renderGenreBars();
+            // カレンダータブを見ているときは、選択中の日付を期限の初期値にする
+            try {
+                const tabs = document.getElementById('filterTabs');
+                if (tabs && tabs.getActiveTabIndex() === 3) {
+                    document.getElementById('taskDue').value = calSelected;
+                } else if (tabs && tabs.getActiveTabIndex() === 0) {
+                    document.getElementById('taskDue').value = toDateKey(new Date());
+                }
+            } catch (e) { /* 初期値が入らないだけなので無視 */ }
+            dialog.show().then(function () {
+                document.getElementById('taskInput').focus();
+            });
+        }
+
+        function closeAddDialog() {
+            document.getElementById('addDialog').hide();
+        }
+
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            const range = document.getElementById('priority');
+            const importantSwitch = document.getElementById('important');
+            const memoInput = document.getElementById('taskMemo');
+            const dueInput = document.getElementById('taskDue');
+            const timeInput = document.getElementById('taskTime');
+            const text = input.value.trim();
+
+            if (text === '') {
+                ons.notification.toast('タスクを入力してください', { timeout: 1800 });
+                input.focus();
+                return;
+            }
+
+            if (timeInput.value && !dueInput.value) {
+                ons.notification.toast('時刻を入れるときは日付も選んでください', { timeout: 2000 });
+                dueInput.focus();
+                return;
+            }
+
+            tasks.push({
+                id: newId(),
+                text: text,
+                completed: false,
+                priority: Number(range.value),
+                important: importantSwitch.checked,
+                memo: memoInput.value.trim(),
+                genre: genreById(addGenre) ? addGenre : '',
+                due: dueInput.value,
+                time: timeInput.value
+            });
+
+            input.value = '';
+            memoInput.value = '';
+            dueInput.value = '';
+            timeInput.value = '';
+            range.value = 3;
+            importantSwitch.checked = false;
+            updatePriority();
+            saveTasks();
+            renderTasks();
+            closeAddDialog();
+        }
+
+        // ---- 期限の扱い ----
+        function pad(n) {
+            return String(n).padStart(2, '0');
+        }
+
+        // 期限の開始日時を返す（期限がなければ null）
+        function parseDue(task) {
+            if (!task.due) return null;
+            const d = task.due.split('-').map(Number);
+            if (!d[0] || !d[1] || !d[2]) return null;
+            if (task.time) {
+                const t = task.time.split(':').map(Number);
+                return new Date(d[0], d[1] - 1, d[2], t[0] || 0, t[1] || 0);
+            }
+            return new Date(d[0], d[1] - 1, d[2]);
+        }
+
+        function isOverdue(task) {
+            const start = parseDue(task);
+            if (!start || task.completed) return false;
+            // 時刻なしの期限は、その日の終わりまで有効
+            const limit = task.time
+                ? start
+                : new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+            return limit < new Date();
+        }
+
+        function formatDueLabel(task) {
+            return task.due.replace(/-/g, '/') + (task.time ? ' ' + task.time : '');
+        }
+
+        // ---- アプリ内カレンダー（月表示）----
+        function toDateKey(d) {
+            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        }
+
+        const now0 = new Date();
+        let calYear = now0.getFullYear();
+        let calMonth = now0.getMonth(); // 0〜11
+        let calSelected = toDateKey(now0);
+
+        function changeMonth(delta) {
+            const d = new Date(calYear, calMonth + delta, 1);
+            calYear = d.getFullYear();
+            calMonth = d.getMonth();
+            // 表示月が今月なら今日、それ以外は1日を選択
+            const today = new Date();
+            const isThisMonth = today.getFullYear() === calYear && today.getMonth() === calMonth;
+            calSelected = toDateKey(isThisMonth ? today : d);
+            renderCalendar();
+        }
+
+        function goToday() {
+            const today = new Date();
+            calYear = today.getFullYear();
+            calMonth = today.getMonth();
+            calSelected = toDateKey(today);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calGrid');
+            const title = document.getElementById('calTitle');
+            const heading = document.getElementById('calDayHeading');
+            const dayList = document.getElementById('calDayList');
+            const dayEmpty = document.getElementById('calDayEmpty');
+            // カレンダーのページがまだ生成されていなければ何もしない
+            if (!grid || !title || !heading || !dayList || !dayEmpty) return;
+
+            title.textContent = calYear + '年' + (calMonth + 1) + '月';
+            grid.replaceChildren();
+
+            ['日', '月', '火', '水', '木', '金', '土'].forEach(function (w, i) {
+                const cell = document.createElement('div');
+                cell.className = 'cal-weekday' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '');
+                cell.textContent = w;
+                grid.appendChild(cell);
+            });
+
+            const firstWeekday = new Date(calYear, calMonth, 1).getDay();
+            const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+            const todayKey = toDateKey(new Date());
+
+            // 日付ごとのタスク
+            const byDate = {};
+            tasks.filter(matchesGenre).forEach(function (task) {
+                if (task.due) (byDate[task.due] = byDate[task.due] || []).push(task);
+            });
+
+            for (let i = 0; i < firstWeekday; i++) {
+                const blank = document.createElement('div');
+                blank.className = 'cal-blank';
+                grid.appendChild(blank);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const key = calYear + '-' + pad(calMonth + 1) + '-' + pad(day);
+                const weekday = (firstWeekday + day - 1) % 7;
+                const dayTasks = byDate[key] || [];
+                const button = document.createElement('button');
+                const num = document.createElement('span');
+
+                button.type = 'button';
+                button.className = 'cal-day'
+                    + (weekday === 0 ? ' sun' : weekday === 6 ? ' sat' : '')
+                    + (key === todayKey ? ' today' : '')
+                    + (key === calSelected ? ' selected' : '');
+                button.setAttribute('aria-label',
+                    (calMonth + 1) + '月' + day + '日 タスク' + dayTasks.length + '件');
+                num.className = 'cal-num';
+                num.textContent = day;
+                button.appendChild(num);
+
+                if (dayTasks.length > 0) {
+                    const mark = document.createElement('span');
+                    const dot = document.createElement('span');
+                    const count = document.createElement('span');
+                    const open = dayTasks.filter(function (t) { return !t.completed; });
+                    mark.className = 'cal-mark';
+                    dot.className = 'cal-dot'
+                        + (open.length === 0 ? ' done' : open.some(isOverdue) ? ' overdue' : '');
+                    count.textContent = dayTasks.length;
+                    mark.append(dot, count);
+                    button.appendChild(mark);
+                }
+
+                button.addEventListener('click', function () {
+                    calSelected = key;
+                    renderCalendar();
+                });
+                grid.appendChild(button);
+            }
+
+            // 選択した日のタスク一覧
+            const parts = calSelected.split('-').map(Number);
+            heading.textContent = parts[0] + '年' + parts[1] + '月' + parts[2] + '日のタスク';
+            dayList.replaceChildren();
+            const selectedTasks = sortedTasks(byDate[calSelected] || []);
+            if (selectedTasks.length === 0) {
+                dayEmpty.textContent = 'この日のタスクはありません。右下の「＋」で追加できます。';
+                dayEmpty.hidden = false;
+            } else {
+                dayEmpty.hidden = true;
+                selectedTasks.forEach(function (task) {
+                    dayList.appendChild(buildTaskItem(task));
+                });
+            }
+        }
+
+        // ---- 一覧の描画 ----
+        // 重要タスク → 優先度の高い順（同順位は追加順）
+        function sortedTasks(list) {
+            return list
+                .map(function (task, index) { return { task: task, index: index }; })
+                .sort(function (a, b) {
+                    return (Number(b.task.important) - Number(a.task.important))
+                        || (b.task.priority - a.task.priority)
+                        || (a.index - b.index);
+                })
+                .map(function (entry) { return entry.task; });
+        }
+
+        // 1件分のタスク行を作る（各タブとカレンダーで共通）
+        function buildTaskItem(task) {
+            const item = document.createElement('ons-list-item');
+            const row = document.createElement('div');
+            const checkbox = document.createElement('ons-checkbox');
+            const textArea = document.createElement('div');
+            const title = document.createElement('div');
+            const details = document.createElement('small');
+            const deleteButton = document.createElement('ons-button');
+
+            row.className = 'todo-row';
+            row.style.borderLeft = '4px solid ' + genreColor(task.genre);
+            row.style.paddingLeft = '8px';
+            checkbox.checked = task.completed;
+            checkbox.addEventListener('change', function () {
+                task.completed = checkbox.checked; // 配列内のオブジェクトを直接更新
+                saveTasks();
+                // ToDo⇄完了のタブでは、行が消えて移ることが分かるよう少し薄くしてから描画し直す
+                const listId = item.parentElement ? item.parentElement.id : '';
+                const moving = (listId === 'openList' && task.completed)
+                    || (listId === 'doneList' && !task.completed);
+                if (moving) {
+                    item.style.transition = 'opacity 0.3s';
+                    item.style.opacity = '0';
+                    setTimeout(renderTasks, 300);
+                } else {
+                    renderTasks();
+                }
+            });
+
+            textArea.className = 'todo-text';
+            title.className = 'todo-title'
+                + (task.completed ? ' completed' : '')
+                + (task.important ? ' important' : '');
+            title.textContent = (task.important ? '★ ' : '') + task.text;
+            details.className = 'task-details';
+            details.textContent = '優先度 ' + task.priority + ' / 5'
+                + (task.important ? ' ・重要' : '');
+            textArea.append(title, details);
+
+            if (task.due) {
+                const due = document.createElement('small');
+                due.className = 'task-details task-due' + (isOverdue(task) ? ' overdue' : '');
+                due.textContent = '期限 ' + formatDueLabel(task) + (isOverdue(task) ? '（期限切れ）' : '');
+                textArea.appendChild(due);
+            }
+            if (task.memo) {
+                const memo = document.createElement('div');
+                memo.className = 'task-memo';
+                memo.textContent = task.memo; // textContent なので HTML は実行されない
+                textArea.appendChild(memo);
+            }
+
+            // ジャンル表示（タップで付け替え）
+            const g = genreById(task.genre);
+            const tag = document.createElement('button');
+            const tagDot = document.createElement('span');
+            tag.type = 'button';
+            tag.className = 'genre-tag';
+            tagDot.className = 'dot';
+            tagDot.style.background = genreColor(task.genre);
+            tag.append(tagDot, document.createTextNode(g ? g.name : '未分類'));
+            tag.addEventListener('click', function () { changeTaskGenre(task); });
+            textArea.appendChild(tag);
+
+            deleteButton.setAttribute('modifier', 'quiet');
+            deleteButton.textContent = '削除';
+            deleteButton.addEventListener('click', function () {
+                tasks = tasks.filter(function (t) { return t.id !== task.id; });
+                saveTasks();
+                renderTasks();
+            });
+
+            row.append(checkbox, textArea, deleteButton);
+            item.appendChild(row);
+            return item;
+        }
+
+        function renderList(listId, emptyId, summaryId, filter) {
+            const list = document.getElementById(listId);
+            const emptyMessage = document.getElementById(emptyId);
+            const summary = document.getElementById(summaryId);
+            // そのタブのページがまだ生成されていなければ何もしない（生成時の init で再描画される）
+            if (!list || !emptyMessage || !summary) return;
+
+            let scoped = tasks.filter(matchesGenre);
+            if (filter === 'today') {
+                const todayKey = toDateKey(new Date());
+                scoped = scoped.filter(function (task) { return task.due === todayKey; });
+            }
+            const unfinished = scoped.filter(function (task) {
+                return !task.completed;
+            }).length;
+            summary.textContent =
+                '未完了 ' + unfinished + '件 / 全' + scoped.length + '件';
+            list.replaceChildren();
+
+            const visibleTasks = sortedTasks(scoped.filter(function (task) {
+                if (filter === 'open') return !task.completed;
+                if (filter === 'done') return task.completed;
+                return true;
+            }));
+
+            if (visibleTasks.length === 0) {
+                emptyMessage.textContent = filter === 'open'
+                    ? 'ToDoはありません。'
+                    : filter === 'done'
+                        ? '完了したタスクはありません。'
+                        : '今日が期限のタスクはありません。右下の「＋」から追加できます。';
+                emptyMessage.hidden = false;
+                return;
+            }
+            emptyMessage.hidden = true;
+
+            visibleTasks.forEach(function (task) {
+                list.appendChild(buildTaskItem(task));
+            });
+        }
+
+        function renderTasks() {
+            renderList('allList', 'allEmpty', 'summaryAll', 'today');
+            renderList('openList', 'openEmpty', 'summaryOpen', 'open');
+            renderList('doneList', 'doneEmpty', 'summaryDone', 'done');
+            renderGenreBars();
+            renderGenreList();
+            renderCalendar();
+            renderMemos();
+        }
+
+        ons.ready(function () {
+            // ページ（各タブ）が生成されるたびに描画する。
+            // これで再読み込み直後も、保存済みタスクが最初から表示される。
+            document.addEventListener('init', function () {
+                renderTasks();
+                // タブ切り替え時に、メモタブでは追加ボタンを隠す（1回だけ登録）
+                const tabs = document.getElementById('filterTabs');
+                if (tabs && !tabs.dataset.bound) {
+                    tabs.dataset.bound = '1';
+                    tabs.addEventListener('postchange', updateFab);
+                }
+            });
+
+            // Enterキーで追加
+            document.getElementById('taskInput').addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.isComposing) addTask(); // 日本語変換中のEnterは除く
+            });
+
+            renderTasks();
+        });
+    </script>
+</body>
+
+</html>
