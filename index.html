@@ -15,15 +15,29 @@
     <style>
         html {
             -webkit-text-size-adjust: 100%;
+            height: 100%;
         }
 
         body {
             background: #f5f7fa;
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* 画面全体がずれたり横に揺れたりしないように */
+            overscroll-behavior: none;
+        }
+
+        #appSplitter {
+            height: 100%;
         }
 
         /* タブが5つ並んでも収まるように */
         .tabbar__label {
             font-size: 12px;
+            white-space: nowrap;
+        }
+
+        ons-tab {
+            min-width: 0;
         }
 
         .page-content {
@@ -196,7 +210,8 @@
         }
 
         .todo-row ons-button {
-            padding: 0 6px;
+            min-width: 0;
+            padding: 0 4px;
             font-size: 12px;
             flex-shrink: 0;
         }
@@ -538,11 +553,11 @@
         #authMessage { min-height: 1.5em; font-size: 13px; overflow-wrap: anywhere; }
         #accountBar {
             display: none;
-            padding: 6px 12px;
-            background: #edf2f7;
+            padding: 14px 16px;
             color: #2d3748;
-            font-size: 12px;
-            text-align: right;
+            font-size: 13px;
+            text-align: left;
+            overflow-wrap: anywhere;
         }
     </style>
 </head>
@@ -563,10 +578,6 @@
             <p id="authMessage" role="status"></p>
         </div>
     </div>
-    <div id="accountBar">
-        <span id="signedInEmail"></span>
-        <button type="button" onclick="signOutUser()" style="width:auto;margin:0 0 0 8px;padding:5px 10px;">ログアウト</button>
-    </div>
 
     <!-- ons-splitter：左側メニューとメイン画面 -->
     <ons-splitter id="appSplitter">
@@ -580,6 +591,11 @@
                     <ons-list-item tappable onclick="openHelp()">使い方</ons-list-item>
                     <ons-list-item tappable onclick="closeMenu()">メニューを閉じる</ons-list-item>
                 </ons-list>
+                <div id="accountBar">
+                    <div id="signedInEmail"></div>
+                    <button type="button" onclick="signOutUser()"
+                        style="width:auto;margin:8px 0 0;padding:8px 14px;border:0;border-radius:7px;background:#e2e8f0;color:#2d3748;font-size:14px;">ログアウト</button>
+                </div>
             </ons-page>
         </ons-splitter-side>
         <ons-splitter-content>
@@ -2334,6 +2350,37 @@
                     tabs.addEventListener('postchange', updateFab);
                 }
             });
+
+            // サブ画面（ジャンル管理・使い方・メモ）では、右へ横スワイプすると前の画面に戻る
+            const nav = document.getElementById('navigator');
+            const side = document.getElementById('sideMenu');
+            function updateMenuSwipe() {
+                // サブ画面では左端スワイプでメニューが開かないようにする（戻る操作と重なるため）
+                try { side.swipeable = nav.pages.length <= 1; } catch (e) { /* 無視 */ }
+            }
+            nav.addEventListener('postpush', updateMenuSwipe);
+            nav.addEventListener('postpop', updateMenuSwipe);
+
+            let swipe = null;
+            document.addEventListener('touchstart', function (e) {
+                swipe = (nav.pages.length > 1 && e.touches.length === 1)
+                    ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() } : null;
+            }, { passive: true });
+            document.addEventListener('touchend', function (e) {
+                if (!swipe) return;
+                const s = swipe;
+                swipe = null;
+                const t = e.changedTouches[0];
+                const dx = t.clientX - s.x;
+                const dy = t.clientY - s.y;
+                if (dx < 90 || Math.abs(dy) > dx * 0.5 || Date.now() - s.t > 800) return;
+                const sel = window.getSelection();
+                if (sel && sel.toString() !== '') return; // 文字を選択中は戻らない
+                const busy = Array.from(document.querySelectorAll('ons-dialog, ons-alert-dialog, ons-action-sheet'))
+                    .some(function (d) { return d.visible; });
+                if (busy || nav.pages.length < 2) return;
+                try { nav.popPage(); } catch (err) { /* 画面の切り替え中は何もしない */ }
+            }, { passive: true });
 
             // Enterキーで追加
             document.getElementById('taskInput').addEventListener('keydown', function (e) {
