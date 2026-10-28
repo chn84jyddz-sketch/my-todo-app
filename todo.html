@@ -354,6 +354,50 @@
             outline-offset: 2px;
         }
 
+        /* ジャンルのフォルダ */
+        .folder {
+            margin-bottom: 14px;
+        }
+
+        .folder-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            border-left: 5px solid #cbd5e0;
+            border-radius: 10px;
+            background: #fff;
+            color: #2d3748;
+            font: inherit;
+            font-weight: bold;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .folder-head .folder-name {
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .folder-head .folder-count {
+            color: #718096;
+            font-size: 12px;
+            font-weight: normal;
+        }
+
+        .folder-head .folder-chev {
+            color: #718096;
+            width: 1em;
+            text-align: center;
+        }
+
+        .folder ons-list {
+            margin-top: 6px;
+        }
+
         .help-content {
             padding: 18px;
             line-height: 1.8;
@@ -589,7 +633,7 @@
                 <p class="intro">今日が期限のタスクです。チェックを入れると消えて「完了」に移ります。</p>
                 <div class="genre-bar" data-genre-filter></div>
                 <div id="summaryAll" class="summary"></div>
-                <ons-list id="allList"></ons-list>
+                <div id="allList"></div>
                 <div id="allEmpty" class="empty-message" hidden></div>
             </div>
         </ons-page>
@@ -602,7 +646,7 @@
                 <p class="intro">これからやるタスクです。チェックを入れると「完了」に移ります。</p>
                 <div class="genre-bar" data-genre-filter></div>
                 <div id="summaryOpen" class="summary"></div>
-                <ons-list id="openList"></ons-list>
+                <div id="openList"></div>
                 <div id="openEmpty" class="empty-message" hidden></div>
             </div>
         </ons-page>
@@ -615,7 +659,7 @@
                 <p class="intro">完了したタスクです。チェックを外すと「ToDo」に戻ります。</p>
                 <div class="genre-bar" data-genre-filter></div>
                 <div id="summaryDone" class="summary"></div>
-                <ons-list id="doneList"></ons-list>
+                <div id="doneList"></div>
                 <div id="doneEmpty" class="empty-message" hidden></div>
             </div>
         </ons-page>
@@ -625,7 +669,7 @@
     <template id="tab-calendar.html">
         <ons-page>
             <div class="page-content">
-                <div class="genre-bar" data-genre-filter></div>
+                <div class="genre-bar" data-genre-filter data-no-folder></div>
                 <div class="cal-header">
                     <ons-button modifier="quiet" onclick="changeMonth(-1)" aria-label="前の月">
                         <ons-icon icon="md-chevron-left"></ons-icon>
@@ -696,6 +740,7 @@
                         編集」かメニューの「ジャンルの管理」で行えます）。上部のボタンで絞り込め、タスクのジャンル名をタップすると付け替えられます。</li>
                     <li>カレンダーでは、期限があるタスクの日に印が付きます。日付を押すと、その日のタスクが下に表示されます（印の青は未完了、赤は期限切れ、灰色は完了済み）。</li>
                     <li>「メモ」タブでは、箇条書きのメモを自由に追加できます。文をタップすると編集、「削除」で消せます。</li>
+                    <li>タスク一覧の上にある「📁 フォルダ表示」を押すと、タスクがジャンルごとのフォルダにまとまります。フォルダの見出しをタップすると開閉できます（もう一度押すと元の一覧に戻ります）。</li>
                     <li>作ったタスクは「編集」を押すと、内容・メモ・期限・ジャンル・優先度を変更できます。</li>
                     <li>不要なタスクは「削除」を押します。</li>
                 </ol>
@@ -1023,6 +1068,27 @@
         let addGenre = '';        // 追加ダイアログで選択中のジャンルID
         let editingGenreId = null;
         let editingTaskId = null; // タスク編集中のID（新規追加のときは null）
+
+        // ---- フォルダ表示（表示設定なので、この端末にだけ保存）----
+        const FOLDER_KEY = 'onsenTodoFolderState';
+
+        function loadFolderState() {
+            try {
+                const s = JSON.parse(localStorage.getItem(FOLDER_KEY));
+                return {
+                    mode: s && typeof s.mode === 'boolean' ? s.mode : true,
+                    collapsed: s && s.collapsed && typeof s.collapsed === 'object' ? s.collapsed : {}
+                };
+            } catch (e) {
+                return { mode: true, collapsed: {} };
+            }
+        }
+
+        let folderState = loadFolderState();
+
+        function saveFolderState() {
+            try { localStorage.setItem(FOLDER_KEY, JSON.stringify(folderState)); } catch (e) { /* 表示設定だけなので無視 */ }
+        }
         let draftColor = GENRE_COLORS[5];
 
         function genreById(id) {
@@ -1072,6 +1138,13 @@
                     bar.appendChild(makeChip(g.name, g.color, currentGenre === g.id, function () { selectGenre(g.id); }));
                 });
                 bar.appendChild(makeChip('未分類', NO_GENRE_COLOR, currentGenre === 'none', function () { selectGenre('none'); }));
+                if (!bar.hasAttribute('data-no-folder')) {
+                    bar.appendChild(makeChip('📁 フォルダ表示', null, folderState.mode, function () {
+                        folderState.mode = !folderState.mode;
+                        saveFolderState();
+                        renderTasks();
+                    }));
+                }
                 bar.appendChild(makeChip('＋ ジャンル', null, false, function () { openGenreDialog(); }));
                 if (genres.length > 0) {
                     bar.appendChild(makeChip('✎ 編集', null, false, function () { openGenres(); }));
@@ -1637,7 +1710,7 @@
                 task.completed = checkbox.checked; // 配列内のオブジェクトを直接更新
                 saveTasks();
                 // ToDo⇄完了のタブでは、行が消えて移ることが分かるよう少し薄くしてから描画し直す
-                const listId = item.parentElement ? item.parentElement.id : '';
+                const listId = item.dataset.list || '';
                 const moving = ((listId === 'openList' || listId === 'allList') && task.completed)
                     || (listId === 'doneList' && !task.completed);
                 if (moving) {
@@ -1741,8 +1814,66 @@
             }
             emptyMessage.hidden = true;
 
+            function makeRow(task) {
+                const row = buildTaskItem(task);
+                row.dataset.list = listId; // チェック時に消える動きを付けるための目印
+                return row;
+            }
+
+            if (!folderState.mode) {
+                const flat = document.createElement('ons-list');
+                visibleTasks.forEach(function (task) { flat.appendChild(makeRow(task)); });
+                list.appendChild(flat);
+                return;
+            }
+
+            // ジャンルごとのフォルダ（ジャンルの並び順 → 未分類）
+            const groups = genres.map(function (g) {
+                return { id: g.id, name: g.name, color: g.color, tasks: [] };
+            });
+            groups.push({ id: 'none', name: '未分類', color: NO_GENRE_COLOR, tasks: [] });
             visibleTasks.forEach(function (task) {
-                list.appendChild(buildTaskItem(task));
+                const g = genreById(task.genre);
+                const key = g ? g.id : 'none';
+                groups.find(function (grp) { return grp.id === key; }).tasks.push(task);
+            });
+
+            groups.filter(function (grp) { return grp.tasks.length > 0; }).forEach(function (grp) {
+                const collapsed = Boolean(folderState.collapsed[grp.id]);
+                const folder = document.createElement('div');
+                const head = document.createElement('button');
+                const chev = document.createElement('span');
+                const icon = document.createElement('span');
+                const name = document.createElement('span');
+                const count = document.createElement('span');
+
+                folder.className = 'folder';
+                head.type = 'button';
+                head.className = 'folder-head';
+                head.style.borderLeftColor = grp.color;
+                head.setAttribute('aria-expanded', String(!collapsed));
+                chev.className = 'folder-chev';
+                chev.textContent = collapsed ? '▸' : '▾';
+                icon.textContent = collapsed ? '📁' : '📂';
+                name.className = 'folder-name';
+                name.textContent = grp.name;
+                count.className = 'folder-count';
+                count.textContent = grp.tasks.length + '件';
+                head.append(chev, icon, name, count);
+                head.addEventListener('click', function () {
+                    folderState.collapsed[grp.id] = !collapsed;
+                    if (!folderState.collapsed[grp.id]) delete folderState.collapsed[grp.id];
+                    saveFolderState();
+                    renderTasks();
+                });
+                folder.appendChild(head);
+
+                if (!collapsed) {
+                    const inner = document.createElement('ons-list');
+                    grp.tasks.forEach(function (task) { inner.appendChild(makeRow(task)); });
+                    folder.appendChild(inner);
+                }
+                list.appendChild(folder);
             });
         }
 
