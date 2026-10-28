@@ -510,7 +510,7 @@
     <!-- タスク追加ダイアログ（入力フォームはここ1か所だけ） -->
     <ons-dialog id="addDialog" cancelable>
         <div class="dialog-body">
-            <h3>新しいタスク</h3>
+            <h3 id="taskDialogTitle">新しいタスク</h3>
             <ons-input id="taskInput" type="text" modifier="underbar" placeholder="タスクを入力" float></ons-input>
             <label class="field-label" for="taskMemo">メモ（任意）</label>
             <textarea id="taskMemo" class="native-field" rows="3" placeholder="詳細や持ち物など"></textarea>
@@ -534,7 +534,7 @@
             </div>
             <div class="dialog-actions">
                 <ons-button modifier="quiet" onclick="closeAddDialog()">キャンセル</ons-button>
-                <ons-button onclick="addTask()">追加</ons-button>
+                <ons-button id="taskSubmitBtn" onclick="addTask()">追加</ons-button>
             </div>
         </div>
     </ons-dialog>
@@ -586,7 +586,7 @@
     <template id="tab-all.html">
         <ons-page>
             <div class="page-content">
-                <p class="intro">今日が期限のタスクです。終わったらチェックしましょう。</p>
+                <p class="intro">今日が期限のタスクです。チェックを入れると消えて「完了」に移ります。</p>
                 <div class="genre-bar" data-genre-filter></div>
                 <div id="summaryAll" class="summary"></div>
                 <ons-list id="allList"></ons-list>
@@ -690,12 +690,13 @@
                     <li>タスクを書き、必要ならメモと期限（日付・時刻）を入れ、優先度を選びます。重要なタスクはスイッチをONにします。</li>
                     <li>「追加」を押す（またはEnterキー）と登録されます。</li>
                     <li>終わったタスクはチェックを入れます。</li>
-                    <li>タブで「Today」「ToDo」「完了」「カレンダー」「メモ」を切り替えます。「Today」には期限が今日のタスクだけが表示されます。ToDoタブでチェックを入れると、そのタスクは消えて「完了」タブに移ります。
+                    <li>タブで「Today」「ToDo」「完了」「カレンダー」「メモ」を切り替えます。「Today」には期限が今日で未完了のタスクだけが表示されます。TodayやToDoタブでチェックを入れると、そのタスクは消えて「完了」タブに移ります。
                     </li>
                     <li>ジャンル（仕事・買い物など）は、名前を自分で入力し、10色から色を選んで作れます。画面上部やタスク追加画面の「＋」、またはメニューの「ジャンルの管理」から追加できます（名前・色の変更や削除は、上部の「✎
                         編集」かメニューの「ジャンルの管理」で行えます）。上部のボタンで絞り込め、タスクのジャンル名をタップすると付け替えられます。</li>
                     <li>カレンダーでは、期限があるタスクの日に印が付きます。日付を押すと、その日のタスクが下に表示されます（印の青は未完了、赤は期限切れ、灰色は完了済み）。</li>
                     <li>「メモ」タブでは、箇条書きのメモを自由に追加できます。文をタップすると編集、「削除」で消せます。</li>
+                    <li>作ったタスクは「編集」を押すと、内容・メモ・期限・ジャンル・優先度を変更できます。</li>
                     <li>不要なタスクは「削除」を押します。</li>
                 </ol>
                 <p>重要なタスクは上に、同じ重要度なら優先度の高い順に並びます。</p>
@@ -1021,6 +1022,7 @@
         let currentGenre = 'all'; // 'all'（すべて）/ 'none'（未分類）/ ジャンルID
         let addGenre = '';        // 追加ダイアログで選択中のジャンルID
         let editingGenreId = null;
+        let editingTaskId = null; // タスク編集中のID（新規追加のときは null）
         let draftColor = GENRE_COLORS[5];
 
         function genreById(id) {
@@ -1350,6 +1352,9 @@
 
         function openAddDialog() {
             const dialog = document.getElementById('addDialog');
+            if (editingTaskId !== null) resetTaskForm(); // 編集の途中で閉じた内容を残さない
+            document.getElementById('taskDialogTitle').textContent = '新しいタスク';
+            document.getElementById('taskSubmitBtn').textContent = '追加';
             // 絞り込み中のジャンルを、追加時の初期値にする
             addGenre = genreById(currentGenre) ? currentGenre : '';
             renderGenreBars();
@@ -1363,6 +1368,36 @@
                 }
             } catch (e) { /* 初期値が入らないだけなので無視 */ }
             dialog.show().then(function () {
+                document.getElementById('taskInput').focus();
+            });
+        }
+
+        function resetTaskForm() {
+            editingTaskId = null;
+            document.getElementById('taskInput').value = '';
+            document.getElementById('taskMemo').value = '';
+            document.getElementById('taskDue').value = '';
+            document.getElementById('taskTime').value = '';
+            document.getElementById('priority').value = 3;
+            document.getElementById('important').checked = false;
+            updatePriority();
+        }
+
+        // 作成済みタスクの編集（追加ダイアログを流用）
+        function openEditDialog(task) {
+            editingTaskId = task.id;
+            document.getElementById('taskDialogTitle').textContent = 'タスクを編集';
+            document.getElementById('taskSubmitBtn').textContent = '保存';
+            document.getElementById('taskInput').value = task.text;
+            document.getElementById('taskMemo').value = task.memo || '';
+            document.getElementById('taskDue').value = task.due || '';
+            document.getElementById('taskTime').value = task.time || '';
+            document.getElementById('priority').value = task.priority;
+            document.getElementById('important').checked = task.important;
+            updatePriority();
+            addGenre = genreById(task.genre) ? task.genre : '';
+            renderGenreBars();
+            document.getElementById('addDialog').show().then(function () {
                 document.getElementById('taskInput').focus();
             });
         }
@@ -1392,25 +1427,31 @@
                 return;
             }
 
-            tasks.push({
-                id: newId(),
+            const fields = {
                 text: text,
-                completed: false,
                 priority: Number(range.value),
                 important: importantSwitch.checked,
                 memo: memoInput.value.trim(),
                 genre: genreById(addGenre) ? addGenre : '',
                 due: dueInput.value,
                 time: timeInput.value
-            });
+            };
 
-            input.value = '';
-            memoInput.value = '';
-            dueInput.value = '';
-            timeInput.value = '';
-            range.value = 3;
-            importantSwitch.checked = false;
-            updatePriority();
+            if (editingTaskId !== null) {
+                // 編集：完了状態やIDはそのまま、内容だけ更新する
+                const target = tasks.find(function (t) { return t.id === editingTaskId; });
+                if (!target) {
+                    ons.notification.toast('このタスクは見つかりませんでした', { timeout: 2000 });
+                    resetTaskForm();
+                    closeAddDialog();
+                    return;
+                }
+                Object.assign(target, fields);
+            } else {
+                tasks.push(Object.assign({ id: newId(), completed: false }, fields));
+            }
+
+            resetTaskForm();
             saveTasks();
             renderTasks();
             closeAddDialog();
@@ -1597,7 +1638,7 @@
                 saveTasks();
                 // ToDo⇄完了のタブでは、行が消えて移ることが分かるよう少し薄くしてから描画し直す
                 const listId = item.parentElement ? item.parentElement.id : '';
-                const moving = (listId === 'openList' && task.completed)
+                const moving = ((listId === 'openList' || listId === 'allList') && task.completed)
                     || (listId === 'doneList' && !task.completed);
                 if (moving) {
                     item.style.transition = 'opacity 0.3s';
@@ -1651,7 +1692,12 @@
                 renderTasks();
             });
 
-            row.append(checkbox, textArea, deleteButton);
+            const editButton = document.createElement('ons-button');
+            editButton.setAttribute('modifier', 'quiet');
+            editButton.textContent = '編集';
+            editButton.addEventListener('click', function () { openEditDialog(task); });
+
+            row.append(checkbox, textArea, editButton, deleteButton);
             item.appendChild(row);
             return item;
         }
@@ -1671,12 +1717,13 @@
             const unfinished = scoped.filter(function (task) {
                 return !task.completed;
             }).length;
-            summary.textContent =
-                '未完了 ' + unfinished + '件 / 全' + scoped.length + '件';
+            summary.textContent = filter === 'today'
+                ? '残り ' + unfinished + '件（今日の全' + scoped.length + '件）'
+                : '未完了 ' + unfinished + '件 / 全' + scoped.length + '件';
             list.replaceChildren();
 
             const visibleTasks = sortedTasks(scoped.filter(function (task) {
-                if (filter === 'open') return !task.completed;
+                if (filter === 'open' || filter === 'today') return !task.completed;
                 if (filter === 'done') return task.completed;
                 return true;
             }));
@@ -1686,7 +1733,9 @@
                     ? 'ToDoはありません。'
                     : filter === 'done'
                         ? '完了したタスクはありません。'
-                        : '今日が期限のタスクはありません。右下の「＋」から追加できます。';
+                        : (scoped.length > 0
+                            ? '今日のタスクはすべて完了しました。'
+                            : '今日が期限のタスクはありません。右下の「＋」から追加できます。');
                 emptyMessage.hidden = false;
                 return;
             }
