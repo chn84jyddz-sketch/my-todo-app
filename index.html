@@ -30,6 +30,33 @@
             height: 100%;
         }
 
+        /* 上のバーが薄く見えないように、色をはっきりさせる */
+        .toolbar {
+            background-color: #f7f7f8;
+        }
+
+        .toolbar__center,
+        .toolbar__title {
+            color: #1a202c;
+            opacity: 1;
+        }
+
+        .toolbar-button,
+        .back-button {
+            color: #007aff;
+            opacity: 1;
+        }
+
+        .toolbar-button ons-icon {
+            font-size: 24px;
+        }
+
+        /* メモの編集画面：下の余白まで白い紙にする */
+        #noteEditorPage .page__background,
+        #noteEditorPage .page__content {
+            background: #fff;
+        }
+
         /* タブが5つ並んでも収まるように */
         .tabbar__label {
             font-size: 12px;
@@ -415,7 +442,8 @@
 
         /* メモ帳 */
         .note-body {
-            min-height: 70vh;
+            min-height: 100%;
+            box-sizing: border-box;
             padding: 14px;
             background: #fff;
             font-size: 17px;
@@ -756,9 +784,9 @@
                 <div class="left"><ons-back-button>戻る</ons-back-button></div>
                 <div class="center">メモ</div>
                 <div class="right">
-                    <ons-toolbar-button id="notePhotoBtn" aria-label="写真を入れる">📷</ons-toolbar-button>
-                    <ons-toolbar-button id="noteMoveBtn" aria-label="フォルダを移動">📁</ons-toolbar-button>
-                    <ons-toolbar-button id="noteDelBtn" aria-label="メモを削除">🗑</ons-toolbar-button>
+                    <ons-toolbar-button id="notePhotoBtn" aria-label="写真を入れる"><ons-icon icon="md-camera"></ons-icon></ons-toolbar-button>
+                    <ons-toolbar-button id="noteMoveBtn" aria-label="フォルダを移動"><ons-icon icon="md-folder"></ons-icon></ons-toolbar-button>
+                    <ons-toolbar-button id="noteDelBtn" aria-label="メモを削除"><ons-icon icon="md-delete"></ons-icon></ons-toolbar-button>
                 </div>
             </ons-toolbar>
             <input type="file" id="notePhotoInput" accept="image/*" multiple hidden>
@@ -802,7 +830,7 @@
                     <li>ジャンル（仕事・買い物など）は、名前を自分で入力し、10色から色を選んで作れます。画面上部やタスク追加画面の「＋」、またはメニューの「ジャンルの管理」から追加できます（名前・色の変更や削除は、上部の「✎
                         編集」かメニューの「ジャンルの管理」で行えます）。上部のボタンで絞り込め、タスクのジャンル名をタップすると付け替えられます。</li>
                     <li>カレンダーでは、期限があるタスクの日に印が付きます。日付を押すと、その日のタスクが下に表示されます（印の青は未完了、赤は期限切れ、灰色は完了済み）。</li>
-                    <li>「メモ」タブは、iPhoneのメモのように使えます。フォルダを作り、その中に白紙のメモを書きます。メモを開くと自由に書き換えられ（自動で保存されます）、右上の📷で写真を入れる、📁でフォルダを移す、🗑で削除ができます。写真をタップすると削除できます。</li>
+                    <li>「メモ」タブは、iPhoneのメモのように使えます。フォルダを作り、その中に白紙のメモを書きます。メモを開くと自由に書き換えられ（自動で保存されます）、右上の📷で写真を入れる、📁でフォルダを移す、🗑で削除ができます。写真をタップすると削除できます。メモ・ジャンル管理・使い方の画面では、画面を横にスワイプしても前の画面に戻れます。</li>
                     <li>タスク一覧の上にある「📁 フォルダ表示」を押すと、タスクがジャンルごとのフォルダにまとまります。フォルダの見出しをタップすると開閉できます（もう一度押すと元の一覧に戻ります）。</li>
                     <li>作ったタスクは「編集」を押すと、内容・メモ・期限・ジャンル・優先度を変更できます。</li>
                     <li>不要なタスクは「削除」を押します。</li>
@@ -2351,7 +2379,7 @@
                 }
             });
 
-            // サブ画面（ジャンル管理・使い方・メモ）では、右へ横スワイプすると前の画面に戻る
+            // サブ画面（ジャンル管理・使い方・メモ）では、横にスワイプ（右へも左へも）すると前の画面に戻る
             const nav = document.getElementById('navigator');
             const side = document.getElementById('sideMenu');
             function updateMenuSwipe() {
@@ -2373,7 +2401,7 @@
                 const t = e.changedTouches[0];
                 const dx = t.clientX - s.x;
                 const dy = t.clientY - s.y;
-                if (dx < 90 || Math.abs(dy) > dx * 0.5 || Date.now() - s.t > 800) return;
+                if (Math.abs(dx) < 90 || Math.abs(dy) > Math.abs(dx) * 0.5 || Date.now() - s.t > 800) return;
                 const sel = window.getSelection();
                 if (sel && sel.toString() !== '') return; // 文字を選択中は戻らない
                 const busy = Array.from(document.querySelectorAll('ons-dialog, ons-alert-dialog, ons-action-sheet'))
