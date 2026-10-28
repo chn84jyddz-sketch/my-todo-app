@@ -609,7 +609,7 @@
 
     <!-- ons-splitter：左側メニューとメイン画面 -->
     <ons-splitter id="appSplitter">
-        <ons-splitter-side id="sideMenu" side="left" width="260px" collapse swipeable>
+        <ons-splitter-side id="sideMenu" side="left" width="260px" collapse>
             <ons-page>
                 <ons-toolbar>
                     <div class="center">メニュー</div>
@@ -2381,13 +2381,6 @@
 
             // サブ画面（ジャンル管理・使い方・メモ）では、横にスワイプ（右へも左へも）すると前の画面に戻る
             const nav = document.getElementById('navigator');
-            const side = document.getElementById('sideMenu');
-            function updateMenuSwipe() {
-                // サブ画面では左端スワイプでメニューが開かないようにする（戻る操作と重なるため）
-                try { side.swipeable = nav.pages.length <= 1; } catch (e) { /* 無視 */ }
-            }
-            nav.addEventListener('postpush', updateMenuSwipe);
-            nav.addEventListener('postpop', updateMenuSwipe);
 
             let swipe = null;
             document.addEventListener('touchstart', function (e) {
