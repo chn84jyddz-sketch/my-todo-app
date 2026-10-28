@@ -398,6 +398,42 @@
             margin-top: 6px;
         }
 
+        /* メモ帳 */
+        .note-body {
+            min-height: 70vh;
+            padding: 14px;
+            background: #fff;
+            font-size: 17px;
+            line-height: 1.7;
+            outline: none;
+            overflow-wrap: anywhere;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        .note-body img {
+            display: block;
+            max-width: 100%;
+            margin: 8px 0;
+            border-radius: 8px;
+        }
+
+        .note-title {
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .note-snippet {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #718096;
+            font-size: 12px;
+        }
+
         .help-content {
             padding: 18px;
             line-height: 1.8;
@@ -692,15 +728,26 @@
     <template id="tab-memo.html">
         <ons-page>
             <div class="page-content">
-                <p class="intro">思いついたことを箇条書きでメモできます。文をタップすると編集できます。</p>
-                <div class="memo-input-row">
-                    <input id="memoInput" class="native-field" type="text" placeholder="メモを入力（Enterで追加）"
-                        onkeydown="if (event.key === 'Enter' && !event.isComposing) addMemo()">
-                    <ons-button onclick="addMemo()">追加</ons-button>
-                </div>
-                <ons-list id="memoList"></ons-list>
-                <div id="memoEmpty" class="empty-message" hidden></div>
+                <div id="noteArea"></div>
             </div>
+        </ons-page>
+    </template>
+
+    <!-- メモの編集画面 -->
+    <template id="note.html">
+        <ons-page id="noteEditorPage">
+            <ons-toolbar>
+                <div class="left"><ons-back-button>戻る</ons-back-button></div>
+                <div class="center">メモ</div>
+                <div class="right">
+                    <ons-toolbar-button id="notePhotoBtn" aria-label="写真を入れる">📷</ons-toolbar-button>
+                    <ons-toolbar-button id="noteMoveBtn" aria-label="フォルダを移動">📁</ons-toolbar-button>
+                    <ons-toolbar-button id="noteDelBtn" aria-label="メモを削除">🗑</ons-toolbar-button>
+                </div>
+            </ons-toolbar>
+            <input type="file" id="notePhotoInput" accept="image/*" multiple hidden>
+            <div id="noteBody" class="note-body" contenteditable="true" role="textbox" aria-multiline="true"
+                aria-label="メモの本文"></div>
         </ons-page>
     </template>
 
@@ -739,7 +786,7 @@
                     <li>ジャンル（仕事・買い物など）は、名前を自分で入力し、10色から色を選んで作れます。画面上部やタスク追加画面の「＋」、またはメニューの「ジャンルの管理」から追加できます（名前・色の変更や削除は、上部の「✎
                         編集」かメニューの「ジャンルの管理」で行えます）。上部のボタンで絞り込め、タスクのジャンル名をタップすると付け替えられます。</li>
                     <li>カレンダーでは、期限があるタスクの日に印が付きます。日付を押すと、その日のタスクが下に表示されます（印の青は未完了、赤は期限切れ、灰色は完了済み）。</li>
-                    <li>「メモ」タブでは、箇条書きのメモを自由に追加できます。文をタップすると編集、「削除」で消せます。</li>
+                    <li>「メモ」タブは、iPhoneのメモのように使えます。フォルダを作り、その中に白紙のメモを書きます。メモを開くと自由に書き換えられ（自動で保存されます）、右上の📷で写真を入れる、📁でフォルダを移す、🗑で削除ができます。写真をタップすると削除できます。</li>
                     <li>タスク一覧の上にある「📁 フォルダ表示」を押すと、タスクがジャンルごとのフォルダにまとまります。フォルダの見出しをタップすると開閉できます（もう一度押すと元の一覧に戻ります）。</li>
                     <li>作ったタスクは「編集」を押すと、内容・メモ・期限・ジャンル・優先度を変更できます。</li>
                     <li>不要なタスクは「削除」を押します。</li>
@@ -796,6 +843,8 @@
                 tasks: tasks,
                 genres: genres,
                 memos: memos,
+                notes: notes,
+                noteFolders: noteFolders,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
         }
@@ -804,6 +853,8 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
             localStorage.setItem(GENRE_KEY, JSON.stringify(genres));
             localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
+            localStorage.setItem(NOTE_KEY, JSON.stringify(notes));
+            localStorage.setItem(NFOLDER_KEY, JSON.stringify(noteFolders));
         }
 
         function scheduleCloudSave() {
@@ -882,10 +933,12 @@
                 tasks = Array.isArray(data.tasks) ? data.tasks : [];
                 genres = Array.isArray(data.genres) ? data.genres : [];
                 memos = Array.isArray(data.memos) ? data.memos : [];
+                applyRemoteNotes(doc.exists ? doc.data() : null);
                 saveLocalData();
                 renderTasks();
                 applyingCloudData = false;
                 cloudReady = true;
+                if (notesNeedUpload) { notesNeedUpload = false; scheduleCloudSave(); }
 
                 cloudUnsubscribe = docRef.onSnapshot(function (snapshot) {
                     if (!snapshot.exists || thisGeneration !== syncGeneration) return;
@@ -894,6 +947,7 @@
                     tasks = Array.isArray(remote.tasks) ? remote.tasks : [];
                     genres = Array.isArray(remote.genres) ? remote.genres : [];
                     memos = Array.isArray(remote.memos) ? remote.memos : [];
+                    applyRemoteNotes(remote);
                     try { saveLocalData(); } catch (e) { console.error('Local save failed', e); }
                     renderTasks();
                     applyingCloudData = false;
@@ -1390,6 +1444,387 @@
             });
         }
 
+// ---- メモ帳（フォルダ・自由記述・写真）----
+        const NOTE_KEY = 'onsenTodoNotes';
+        const NFOLDER_KEY = 'onsenTodoNoteFolders';
+        const NOTE_LIMIT = 800000; // Firestoreの1ドキュメント(約1MB)に収めるための目安（文字数）
+        let notesNeedUpload = false;
+        let noteFolderId = null; // 開いているフォルダ（nullならフォルダ一覧）
+
+        // 本文HTMLから、文字・改行・画像(data URL)以外をすべて取り除く
+        function sanitizeNoteHtml(html) {
+            const doc = new DOMParser().parseFromString('<body>' + (html || '') + '</body>', 'text/html');
+            const out = document.createElement('div');
+            (function walk(src, dst) {
+                src.childNodes.forEach(function (n) {
+                    if (n.nodeType === 3) {
+                        dst.appendChild(document.createTextNode(n.nodeValue));
+                    } else if (n.nodeType === 1) {
+                        const tag = n.tagName.toLowerCase();
+                        if (tag === 'img') {
+                            const s = n.getAttribute('src') || '';
+                            if (/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(s)) {
+                                const im = document.createElement('img');
+                                im.src = s;
+                                dst.appendChild(im);
+                            }
+                        } else if (tag === 'br') {
+                            dst.appendChild(document.createElement('br'));
+                        } else if (tag === 'div' || tag === 'p') {
+                            const d = document.createElement('div');
+                            walk(n, d);
+                            dst.appendChild(d);
+                        } else if (tag !== 'script' && tag !== 'style') {
+                            walk(n, dst);
+                        }
+                    }
+                });
+            })(doc.body, out);
+            return out.innerHTML;
+        }
+
+        function noteMeta(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html.replace(/<img[^>]*>/g, '').replace(/<br\s*\/?>|<\/div>|<div>/g, '\n');
+            const lines = tmp.textContent.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+            const photo = /<img/.test(html);
+            return {
+                title: lines[0] || (photo ? '📷 写真' : '新規メモ'),
+                snippet: lines[1] || (lines[0] && photo ? '📷 写真' : ''),
+                empty: lines.length === 0 && !photo
+            };
+        }
+
+        function normFolders(list) {
+            return (Array.isArray(list) ? list : []).filter(function (f) {
+                return f && typeof f.id === 'string' && typeof f.name === 'string' && f.name !== '';
+            }).map(function (f) { return { id: f.id, name: f.name }; });
+        }
+
+        function normNotes(list) {
+            return (Array.isArray(list) ? list : []).filter(function (n) {
+                return n && typeof n.id === 'string' && typeof n.folder === 'string';
+            }).map(function (n) {
+                const html = sanitizeNoteHtml(n.html);
+                const meta = noteMeta(html);
+                return { id: n.id, folder: n.folder, html: html, title: meta.title, snippet: meta.snippet, updated: Number(n.updated) || 0 };
+            });
+        }
+
+        function readJsonList(key) {
+            try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return []; }
+        }
+
+        let noteFolders = normFolders(readJsonList(NFOLDER_KEY));
+        let notes = normNotes(readJsonList(NOTE_KEY));
+
+        // 初回：フォルダを1つ作り、これまでの箇条書きメモがあれば1つのメモにまとめる
+        if (noteFolders.length === 0 && notes.length === 0) {
+            const first = { id: newId(), name: 'メモ' };
+            noteFolders.push(first);
+            if (memos.length > 0) {
+                const html = memos.map(function (m) {
+                    const d = document.createElement('div');
+                    d.textContent = '・' + m.text;
+                    return '<div>' + d.innerHTML + '</div>';
+                }).join('');
+                const meta = noteMeta(html);
+                notes.push({ id: newId(), folder: first.id, html: html, title: meta.title, snippet: meta.snippet, updated: Date.now() });
+            }
+            try {
+                localStorage.setItem(NOTE_KEY, JSON.stringify(notes));
+                localStorage.setItem(NFOLDER_KEY, JSON.stringify(noteFolders));
+            } catch (e) { /* 次の保存で再試行される */ }
+        }
+
+        function saveNotes() {
+            try {
+                localStorage.setItem(NOTE_KEY, JSON.stringify(notes));
+                localStorage.setItem(NFOLDER_KEY, JSON.stringify(noteFolders));
+                scheduleCloudSave();
+            } catch (e) {
+                ons.notification.toast('保存できませんでした（容量がいっぱいかもしれません）', { timeout: 2500 });
+            }
+        }
+
+        // クラウドのデータを反映（クラウドにメモ帳がまだ無ければ、この端末のものを送る）
+        function applyRemoteNotes(remote) {
+            if (remote && Array.isArray(remote.notes) && Array.isArray(remote.noteFolders)) {
+                noteFolders = normFolders(remote.noteFolders);
+                notes = normNotes(remote.notes);
+            } else if (notes.length > 0 || noteFolders.length > 0) {
+                notesNeedUpload = true;
+            }
+        }
+
+        function el(tag, cls, text) {
+            const e = document.createElement(tag);
+            if (cls) e.className = cls;
+            if (text !== undefined) e.textContent = text;
+            return e;
+        }
+
+        function mkButton(label, modifier, onClick) {
+            const b = document.createElement('ons-button');
+            if (modifier) b.setAttribute('modifier', modifier);
+            b.textContent = label;
+            b.addEventListener('click', onClick);
+            return b;
+        }
+
+        function fmtNoteDate(ts) {
+            if (!ts) return '';
+            const d = new Date(ts);
+            return d.toDateString() === new Date().toDateString()
+                ? pad(d.getHours()) + ':' + pad(d.getMinutes())
+                : (d.getMonth() + 1) + '/' + d.getDate();
+        }
+
+        function renderNotes() {
+            const area = document.getElementById('noteArea');
+            if (!area) return; // ページ未生成のときは何もしない
+            area.replaceChildren();
+            const folder = noteFolders.find(function (f) { return f.id === noteFolderId; });
+
+            if (!folder) {
+                noteFolderId = null;
+                const head = el('div', 'cal-header');
+                head.append(el('span', 'cal-title', 'フォルダ'), mkButton('＋ フォルダ', '', addNoteFolder));
+                area.appendChild(head);
+                if (noteFolders.length === 0) {
+                    area.appendChild(el('div', 'empty-message', 'フォルダはまだありません。「＋ フォルダ」から作れます。'));
+                    return;
+                }
+                const list = document.createElement('ons-list');
+                noteFolders.forEach(function (f) {
+                    const item = document.createElement('ons-list-item');
+                    const row = el('div', 'todo-row');
+                    const count = notes.filter(function (n) { return n.folder === f.id; }).length;
+                    item.setAttribute('tappable', '');
+                    row.append(el('span', '', '📁'), el('div', 'todo-text', f.name), el('small', '', count + '件 ›'));
+                    item.appendChild(row);
+                    item.addEventListener('click', function () { noteFolderId = f.id; renderNotes(); });
+                    list.appendChild(item);
+                });
+                area.appendChild(list);
+                return;
+            }
+
+            const head = el('div', 'cal-header');
+            head.append(
+                mkButton('‹ フォルダ', 'quiet', function () { noteFolderId = null; renderNotes(); }),
+                el('span', 'cal-title', folder.name),
+                mkButton('名前', 'quiet', function () { renameNoteFolder(folder); }),
+                mkButton('削除', 'quiet', function () { deleteNoteFolder(folder); })
+            );
+            area.appendChild(head);
+            const add = mkButton('＋ 新規メモ', 'large', function () { newNote(folder.id); });
+            add.style.marginBottom = '12px';
+            area.appendChild(add);
+
+            const mine = notes.filter(function (n) { return n.folder === folder.id; })
+                .sort(function (a, b) { return b.updated - a.updated; });
+            if (mine.length === 0) {
+                area.appendChild(el('div', 'empty-message', 'このフォルダにメモはありません。'));
+                return;
+            }
+            const list = document.createElement('ons-list');
+            mine.forEach(function (n) {
+                const item = document.createElement('ons-list-item');
+                const row = el('div', 'todo-row');
+                const text = el('div', 'todo-text');
+                item.setAttribute('tappable', '');
+                text.append(el('div', 'note-title', n.title), el('small', 'note-snippet', n.snippet));
+                row.append(text, el('small', '', fmtNoteDate(n.updated)));
+                item.appendChild(row);
+                item.addEventListener('click', function () { openNote(n.id); });
+                list.appendChild(item);
+            });
+            area.appendChild(list);
+        }
+
+        function addNoteFolder() {
+            ons.notification.prompt('フォルダの名前', { buttonLabels: ['キャンセル', '作成'] }).then(function (v) {
+                const name = v === null ? '' : v.trim().slice(0, 30);
+                if (name === '') return;
+                noteFolders.push({ id: newId(), name: name });
+                saveNotes();
+                renderNotes();
+            });
+        }
+
+        function renameNoteFolder(folder) {
+            ons.notification.prompt('フォルダ名を変更', { defaultValue: folder.name, buttonLabels: ['キャンセル', 'OK'] }).then(function (v) {
+                const name = v === null ? '' : v.trim().slice(0, 30);
+                if (name === '') return;
+                folder.name = name;
+                saveNotes();
+                renderNotes();
+            });
+        }
+
+        function deleteNoteFolder(folder) {
+            const count = notes.filter(function (n) { return n.folder === folder.id; }).length;
+            ons.notification.confirm(
+                '「' + folder.name + '」を削除しますか？' + (count > 0 ? ' 中のメモ' + count + '件も一緒に消えます。' : ''),
+                { buttonLabels: ['キャンセル', '削除'] }
+            ).then(function (index) {
+                if (index !== 1) return;
+                noteFolders = noteFolders.filter(function (f) { return f.id !== folder.id; });
+                notes = notes.filter(function (n) { return n.folder !== folder.id; });
+                noteFolderId = null;
+                saveNotes();
+                renderNotes();
+            });
+        }
+
+        function openNote(id) {
+            document.getElementById('navigator').pushPage('note.html', { data: { id: id } });
+        }
+
+        function newNote(folderId) {
+            const note = { id: newId(), folder: folderId, html: '', title: '新規メモ', snippet: '', updated: Date.now() };
+            notes.push(note);
+            saveNotes();
+            openNote(note.id);
+        }
+
+        // 編集中の本文を保存する
+        function commitNote(id, body) {
+            const note = notes.find(function (n) { return n.id === id; });
+            if (!note) return;
+            const html = sanitizeNoteHtml(body.innerHTML);
+            if (html === note.html) return;
+            const meta = noteMeta(html);
+            note.html = html;
+            note.title = meta.title;
+            note.snippet = meta.snippet;
+            note.updated = Date.now();
+            saveNotes();
+            renderNotes();
+        }
+
+        // 写真を小さく圧縮する（長辺700px・JPEG）
+        function compressImage(file) {
+            return new Promise(function (resolve, reject) {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = function () {
+                    const scale = Math.min(1, 700 / Math.max(img.width, img.height));
+                    const c = document.createElement('canvas');
+                    c.width = Math.max(1, Math.round(img.width * scale));
+                    c.height = Math.max(1, Math.round(img.height * scale));
+                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                    URL.revokeObjectURL(url);
+                    resolve(c.toDataURL('image/jpeg', 0.6));
+                };
+                img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('image')); };
+                img.src = url;
+            });
+        }
+
+        function insertPhoto(body, file) {
+            compressImage(file).then(function (dataUrl) {
+                if (JSON.stringify(notes).length + dataUrl.length > NOTE_LIMIT) {
+                    ons.notification.toast('メモの容量がいっぱいです。古い写真を消してから入れてください', { timeout: 3000 });
+                    return;
+                }
+                const sel = window.getSelection();
+                if (sel && sel.rangeCount > 0 && body.contains(sel.anchorNode)) {
+                    document.execCommand('insertHTML', false, '<img src="' + dataUrl + '"><br>');
+                } else {
+                    const im = document.createElement('img');
+                    im.src = dataUrl;
+                    body.append(im, document.createElement('br'));
+                }
+                body.dispatchEvent(new Event('input'));
+            }).catch(function () {
+                ons.notification.toast('写真を読み込めませんでした', { timeout: 2000 });
+            });
+        }
+
+        // メモの編集画面ができたときの準備
+        document.addEventListener('init', function (e) {
+            const page = e.target;
+            if (!page || page.id !== 'noteEditorPage') return;
+            const id = page.data && page.data.id;
+            const note = notes.find(function (n) { return n.id === id; });
+            if (!note) { document.getElementById('navigator').popPage(); return; }
+
+            const body = page.querySelector('#noteBody');
+            const fileInput = page.querySelector('#notePhotoInput');
+            let timer = null;
+            function flush() { clearTimeout(timer); timer = null; commitNote(id, body); }
+
+            body.innerHTML = note.html;
+            body.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(flush, 400); });
+            body.addEventListener('paste', function (ev) {
+                const cd = ev.clipboardData;
+                if (!cd) return;
+                ev.preventDefault(); // 書式は持ち込まず、文字と画像だけ受け取る
+                const files = Array.from(cd.files || []).filter(function (f) { return /^image\//.test(f.type); });
+                if (files.length > 0) { files.forEach(function (f) { insertPhoto(body, f); }); return; }
+                const text = cd.getData('text/plain');
+                if (text) document.execCommand('insertText', false, text);
+            });
+            body.addEventListener('click', function (ev) {
+                if (ev.target && ev.target.tagName === 'IMG') {
+                    const img = ev.target;
+                    ons.notification.confirm('この写真を削除しますか？', { buttonLabels: ['キャンセル', '削除'] }).then(function (index) {
+                        if (index !== 1) return;
+                        img.remove();
+                        body.dispatchEvent(new Event('input'));
+                    });
+                }
+            });
+            page.addEventListener('hide', flush);
+
+            page.querySelector('#notePhotoBtn').addEventListener('click', function () { fileInput.click(); });
+            fileInput.addEventListener('change', function () {
+                Array.from(fileInput.files || []).forEach(function (f) { insertPhoto(body, f); });
+                fileInput.value = '';
+            });
+            page.querySelector('#noteMoveBtn').addEventListener('click', function () {
+                flush();
+                ons.openActionSheet({
+                    title: 'フォルダを選ぶ',
+                    cancelable: true,
+                    buttons: noteFolders.map(function (f) { return f.name; })
+                        .concat([{ label: 'キャンセル', icon: 'md-close' }])
+                }).then(function (index) {
+                    if (index < 0 || index >= noteFolders.length) return;
+                    const target = notes.find(function (n) { return n.id === id; });
+                    if (!target) return;
+                    target.folder = noteFolders[index].id;
+                    noteFolderId = target.folder;
+                    saveNotes();
+                    renderNotes();
+                });
+            });
+            page.querySelector('#noteDelBtn').addEventListener('click', function () {
+                ons.notification.confirm('このメモを削除しますか？', { buttonLabels: ['キャンセル', '削除'] }).then(function (index) {
+                    if (index !== 1) return;
+                    notes = notes.filter(function (n) { return n.id !== id; });
+                    saveNotes();
+                    renderNotes();
+                    document.getElementById('navigator').popPage();
+                });
+            });
+            if (note.html === '') body.focus();
+        });
+
+        // 何も書かずに閉じたメモは残さない
+        document.addEventListener('destroy', function (e) {
+            const page = e.target;
+            if (!page || page.id !== 'noteEditorPage' || !page.data) return;
+            const note = notes.find(function (n) { return n.id === page.data.id; });
+            if (note && noteMeta(note.html).empty) {
+                notes = notes.filter(function (n) { return n.id !== note.id; });
+                saveNotes();
+                renderNotes();
+            }
+        });
+
         // メモタブ（5番目）ではタスク追加ボタンを隠す
         function updateFab() {
             const tabs = document.getElementById('filterTabs');
@@ -1884,7 +2319,7 @@
             renderGenreBars();
             renderGenreList();
             renderCalendar();
-            renderMemos();
+            renderNotes();
         }
 
         ons.ready(function () {
