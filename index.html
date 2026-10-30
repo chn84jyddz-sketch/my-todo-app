@@ -2170,6 +2170,62 @@
             renderCalendar();
         }
 
+        // ---- 日本の祝日（2007年以降。インターネットなしで計算する）----
+        const holidayCache = {};
+
+        function holidaysOf(y) {
+            if (holidayCache[y]) return holidayCache[y];
+            const h = {};
+            const k = function (m, d) { return y + '-' + pad(m) + '-' + pad(d); };
+            // m月の第n月曜日
+            const monday = function (m, n) {
+                const f = new Date(y, m - 1, 1).getDay();
+                return 1 + (8 - f) % 7 + (n - 1) * 7;
+            };
+            const equinox = function (base) {
+                return Math.floor(base + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4));
+            };
+
+            h[k(1, 1)] = '元日';
+            h[k(1, monday(1, 2))] = '成人の日';
+            h[k(2, 11)] = '建国記念の日';
+            if (y >= 2020) h[k(2, 23)] = '天皇誕生日';
+            h[k(3, equinox(20.8431))] = '春分の日';
+            h[k(4, 29)] = '昭和の日';
+            h[k(5, 3)] = '憲法記念日';
+            h[k(5, 4)] = 'みどりの日';
+            h[k(5, 5)] = 'こどもの日';
+            // オリンピックの年だけ日付が違う祝日
+            h[y === 2020 ? k(7, 23) : y === 2021 ? k(7, 22) : k(7, monday(7, 3))] = '海の日';
+            h[y === 2020 ? k(8, 10) : y === 2021 ? k(8, 8) : k(8, 11)] = '山の日';
+            h[k(9, monday(9, 3))] = '敬老の日';
+            h[k(9, equinox(23.2488))] = '秋分の日';
+            h[y === 2020 ? k(7, 24) : y === 2021 ? k(7, 23) : k(10, monday(10, 2))] = 'スポーツの日';
+            h[k(11, 3)] = '文化の日';
+            h[k(11, 23)] = '勤労感謝の日';
+
+            // 国民の休日：祝日にはさまれた平日（9月）
+            for (let d = 2; d < 30; d++) {
+                const dt = new Date(y, 8, d);
+                if (dt.getDay() !== 0 && !h[k(9, d)] && h[k(9, d - 1)] && h[k(9, d + 1)]) h[k(9, d)] = '国民の休日';
+            }
+            // 振替休日：日曜と重なった祝日の次の平日
+            Object.keys(h).forEach(function (key) {
+                const p = key.split('-').map(Number);
+                const dt = new Date(p[0], p[1] - 1, p[2]);
+                if (dt.getDay() !== 0) return;
+                do { dt.setDate(dt.getDate() + 1); } while (h[toDateKey(dt)]);
+                h[toDateKey(dt)] = '振替休日';
+            });
+
+            holidayCache[y] = h;
+            return h;
+        }
+
+        function holidayName(key) {
+            return holidaysOf(Number(key.slice(0, 4)))[key] || '';
+        }
+
         function bindCalendarSwipe(grid) {
             if (grid.dataset.swipe) return;
             grid.dataset.swipe = '1';
@@ -2241,11 +2297,12 @@
 
                 button.type = 'button';
                 button.className = 'cal-day'
-                    + (weekday === 0 ? ' sun' : weekday === 6 ? ' sat' : '')
+                    + (weekday === 0 || holidayName(key) ? ' sun' : weekday === 6 ? ' sat' : '')
                     + (key === todayKey ? ' today' : '')
                     + (key === calSelected ? ' selected' : '');
                 button.setAttribute('aria-label',
-                    (calMonth + 1) + '月' + day + '日 タスク' + dayTasks.length + '件');
+                    (calMonth + 1) + '月' + day + '日' + (holidayName(key) ? ' ' + holidayName(key) : '')
+                    + ' タスク' + dayTasks.length + '件');
                 num.className = 'cal-num';
                 num.textContent = day;
                 button.appendChild(num);
@@ -2286,7 +2343,8 @@
 
             // 選択した日のタスク一覧
             const parts = calSelected.split('-').map(Number);
-            heading.textContent = parts[0] + '年' + parts[1] + '月' + parts[2] + '日のタスク';
+            heading.textContent = parts[0] + '年' + parts[1] + '月' + parts[2] + '日のタスク'
+                + (holidayName(calSelected) ? '（' + holidayName(calSelected) + '）' : '');
             dayList.replaceChildren();
             const selectedTasks = sortedTasks(byDate[calSelected] || []);
             if (selectedTasks.length === 0) {
