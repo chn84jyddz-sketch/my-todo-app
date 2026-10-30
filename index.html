@@ -12,6 +12,9 @@
     <script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore-compat.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
     <style>
         html {
             -webkit-text-size-adjust: 100%;
@@ -22,8 +25,7 @@
             background: #f5f7fa;
             height: 100%;
             margin: 0;
-            overflow: hidden;
-            /* 画面全体がずれたり横に揺れたりしないように */
+            overflow: hidden; /* 画面全体がずれたり横に揺れたりしないように */
             overscroll-behavior: none;
         }
 
@@ -587,7 +589,6 @@
             box-sizing: border-box;
             background: #f5f7fa;
         }
-
         #authCard {
             width: 100%;
             max-width: 360px;
@@ -595,25 +596,11 @@
             box-sizing: border-box;
             background: #fff;
             border-radius: 14px;
-            box-shadow: 0 8px 28px rgba(0, 0, 0, .10);
+            box-shadow: 0 8px 28px rgba(0,0,0,.10);
         }
-
-        #authCard h2 {
-            margin: 0 0 8px;
-            text-align: center;
-        }
-
-        #authCard p {
-            color: #536273;
-            line-height: 1.6;
-        }
-
-        #authCard label {
-            display: block;
-            margin: 14px 0 5px;
-            font-size: 14px;
-        }
-
+        #authCard h2 { margin: 0 0 8px; text-align: center; }
+        #authCard p { color: #536273; line-height: 1.6; }
+        #authCard label { display: block; margin: 14px 0 5px; font-size: 14px; }
         #authCard input {
             display: block;
             width: 100%;
@@ -623,7 +610,6 @@
             border-radius: 7px;
             font-size: 16px;
         }
-
         #authCard button {
             width: 100%;
             margin-top: 12px;
@@ -635,18 +621,11 @@
             font-size: 15px;
             cursor: pointer;
         }
-
         #authCard button.secondary {
             background: #edf2f7;
             color: #2d3748;
         }
-
-        #authMessage {
-            min-height: 1.5em;
-            font-size: 13px;
-            overflow-wrap: anywhere;
-        }
-
+        #authMessage { min-height: 1.5em; font-size: 13px; overflow-wrap: anywhere; }
         #accountBar {
             display: none;
             padding: 14px 16px;
@@ -654,6 +633,305 @@
             font-size: 13px;
             text-align: left;
             overflow-wrap: anywhere;
+        }
+
+        /* ===== デザイン刷新：紙の手帳のような、静かで読みやすい見た目 ===== */
+        :root {
+            --paper: #f3f4ef;
+            --surface: #ffffff;
+            --ink: #1f2a37;
+            --muted: #6b7683;
+            --line: #dfe3da;
+            --accent: #2f4b7c;
+            --red: #d64545;
+            --font-body: 'Zen Kaku Gothic New', -apple-system, 'Hiragino Sans', sans-serif;
+            --font-title: 'Shippori Mincho', 'Hiragino Mincho ProN', serif;
+        }
+
+        body, ons-page, .page, ons-button, ons-list-item, button, input, textarea, select {
+            font-family: var(--font-body);
+        }
+
+        body {
+            background: var(--paper);
+            color: var(--ink);
+        }
+
+        ons-page:not(#noteEditorPage) .page__background {
+            background: var(--paper) !important;
+        }
+
+        /* 上のバーとタブ */
+        .toolbar {
+            background: var(--paper);
+            border-bottom: 1px solid var(--line);
+            box-shadow: none;
+        }
+
+        .toolbar__center,
+        .toolbar__title {
+            font-family: var(--font-title);
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: var(--ink);
+        }
+
+        .toolbar-button,
+        .back-button {
+            color: var(--ink);
+        }
+
+        .tabbar {
+            background: var(--paper);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .tabbar__label {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        ons-tab[active] .tabbar__label {
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        .tabbar__border {
+            background-color: var(--ink) !important;
+            height: 2px;
+        }
+
+        .intro {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .summary {
+            margin: 14px 0 10px;
+            color: var(--ink);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        /* リストは、細い線で囲んだ1枚ずつの札に */
+        .list {
+            margin: 0;
+            border: none;
+            background: transparent;
+        }
+
+        .list-item {
+            margin: 0 0 8px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--surface);
+            overflow: hidden;
+        }
+
+        .list-item__left,
+        .list-item__center,
+        .list-item__right {
+            border: none !important;
+        }
+
+        ons-splitter-side .list {
+            padding: 10px 12px;
+        }
+
+        .todo-row {
+            padding: 4px 0;
+        }
+
+        .todo-title {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .genre-chip {
+            border: 1px solid var(--line);
+            background: var(--surface);
+            color: var(--ink);
+            font-weight: 500;
+        }
+
+        .genre-chip.active {
+            border-color: transparent;
+            color: #fff;
+        }
+
+        .folder-head {
+            border: 1px solid var(--line);
+            border-left: 6px solid var(--line);
+            border-radius: 12px;
+            font-family: var(--font-title);
+            font-size: 15px;
+            letter-spacing: 0.04em;
+        }
+
+        /* カレンダー */
+        .cal-title {
+            font-family: var(--font-title);
+            font-size: 20px;
+            letter-spacing: 0.08em;
+        }
+
+        .cal-weekday {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .cal-weekday.sun {
+            color: var(--red);
+        }
+
+        .cal-weekday.sat {
+            color: var(--accent);
+        }
+
+        .cal-day {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--surface);
+        }
+
+        .cal-day.sun .cal-num {
+            color: var(--red);
+        }
+
+        .cal-day.sat .cal-num {
+            color: var(--accent);
+        }
+
+        .cal-day.today .cal-num {
+            background: var(--ink);
+            color: #fff;
+        }
+
+        .cal-day.selected {
+            outline: 2px solid var(--ink);
+            outline-offset: -1px;
+        }
+
+        .cal-chip {
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .cal-day-heading {
+            margin: 20px 0 8px;
+            font-family: var(--font-title);
+            font-size: 16px;
+            letter-spacing: 0.04em;
+        }
+
+        /* 入力欄・ボタン・ダイアログ */
+        .native-field {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+        }
+
+        .native-field:focus {
+            outline: none;
+            border-color: var(--ink);
+            box-shadow: 0 0 0 3px rgba(31, 42, 55, 0.12);
+        }
+
+        .button {
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .button:not(.button--quiet):not(.button--light):not(.button--outline) {
+            background-color: var(--ink);
+            color: #fff;
+        }
+
+        .button--quiet {
+            color: var(--ink);
+        }
+
+        .button--light {
+            border: 1px solid var(--line);
+            background: var(--surface);
+            color: var(--ink);
+        }
+
+        .fab {
+            background-color: var(--ink) !important;
+            box-shadow: 0 6px 18px rgba(31, 42, 55, 0.28);
+        }
+
+        .checkbox__input:checked + .checkbox__checkmark {
+            background-color: var(--ink);
+            border-color: var(--ink);
+        }
+
+        .dialog,
+        .dialog-container {
+            border-radius: 24px;
+        }
+
+        .dialog {
+            box-shadow: 0 24px 60px rgba(31, 42, 55, 0.28);
+        }
+
+        .dialog-container {
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        .dialog-body h3 {
+            font-family: var(--font-title);
+            font-size: 19px;
+            letter-spacing: 0.04em;
+        }
+
+        .form-options {
+            border: 1px solid var(--line);
+            background: var(--paper);
+        }
+
+        .help-content h2 {
+            font-family: var(--font-title);
+            letter-spacing: 0.04em;
+        }
+
+        /* ログイン画面 */
+        #authScreen {
+            background: var(--paper);
+        }
+
+        #authCard {
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            box-shadow: 0 18px 50px rgba(31, 42, 55, 0.12);
+        }
+
+        #authCard h2 {
+            font-family: var(--font-title);
+            font-size: 24px;
+            letter-spacing: 0.08em;
+        }
+
+        #authCard input {
+            border-radius: 10px;
+        }
+
+        #authCard button {
+            border-radius: 10px;
+            background: var(--ink);
+            font-weight: 700;
+        }
+
+        #authCard button.secondary {
+            border: 1px solid var(--line);
+            background: var(--paper);
+            color: var(--ink);
         }
     </style>
 </head>
@@ -864,12 +1142,9 @@
                 <div class="left"><ons-back-button>戻る</ons-back-button></div>
                 <div class="center">メモ</div>
                 <div class="right">
-                    <ons-toolbar-button id="notePhotoBtn" aria-label="写真を入れる"><ons-icon
-                            icon="md-camera"></ons-icon></ons-toolbar-button>
-                    <ons-toolbar-button id="noteMoveBtn" aria-label="フォルダを移動"><ons-icon
-                            icon="md-folder"></ons-icon></ons-toolbar-button>
-                    <ons-toolbar-button id="noteDelBtn" aria-label="メモを削除"><ons-icon
-                            icon="md-delete"></ons-icon></ons-toolbar-button>
+                    <ons-toolbar-button id="notePhotoBtn" aria-label="写真を入れる"><ons-icon icon="md-camera"></ons-icon></ons-toolbar-button>
+                    <ons-toolbar-button id="noteMoveBtn" aria-label="フォルダを移動"><ons-icon icon="md-folder"></ons-icon></ons-toolbar-button>
+                    <ons-toolbar-button id="noteDelBtn" aria-label="メモを削除"><ons-icon icon="md-delete"></ons-icon></ons-toolbar-button>
                 </div>
             </ons-toolbar>
             <input type="file" id="notePhotoInput" accept="image/*" multiple hidden>
@@ -913,8 +1188,7 @@
                     <li>ジャンル（仕事・買い物など）は、名前を自分で入力し、10色から色を選んで作れます。画面上部やタスク追加画面の「＋」、またはメニューの「ジャンルの管理」から追加できます（名前・色の変更や削除は、上部の「✎
                         編集」かメニューの「ジャンルの管理」で行えます）。上部のボタンで絞り込め、タスクのジャンル名をタップすると付け替えられます。</li>
                     <li>カレンダーでは、期限があるタスクの日に印が付きます。日付を押すと、その日のタスクが下に表示されます（印の青は未完了、赤は期限切れ、灰色は完了済み）。</li>
-                    <li>「メモ」タブは、iPhoneのメモのように使えます。フォルダを作り、その中に白紙のメモを書きます。メモを開くと自由に書き換えられ（自動で保存されます）、右上の📷で写真を入れる、📁でフォルダを移す、🗑で削除ができます。写真をタップすると削除できます。メモ・ジャンル管理・使い方の画面では、画面を横にスワイプしても前の画面に戻れます。
-                    </li>
+                    <li>「メモ」タブは、iPhoneのメモのように使えます。フォルダを作り、その中に白紙のメモを書きます。メモを開くと自由に書き換えられ（自動で保存されます）、右上の📷で写真を入れる、📁でフォルダを移す、🗑で削除ができます。写真をタップすると削除できます。メモ・ジャンル管理・使い方の画面では、画面を横にスワイプしても前の画面に戻れます。</li>
                     <li>タスク一覧の上にある「📁 フォルダ表示」を押すと、タスクがジャンルごとのフォルダにまとまります。フォルダの見出しをタップすると開閉できます（もう一度押すと元の一覧に戻ります）。</li>
                     <li>作ったタスクは「編集」を押すと、内容・メモ・期限・ジャンル・優先度を変更できます。</li>
                     <li>不要なタスクは「削除」を押します。</li>
@@ -1131,8 +1405,8 @@
                 } else if (error.code === 'auth/weak-password') {
                     message = 'パスワードは6文字以上にしてください。';
                 } else if (error.code === 'auth/invalid-credential' ||
-                    error.code === 'auth/wrong-password' ||
-                    error.code === 'auth/user-not-found') {
+                           error.code === 'auth/wrong-password' ||
+                           error.code === 'auth/user-not-found') {
                     message = 'メールアドレスまたはパスワードを確認してください。';
                 } else if (error.code === 'auth/operation-not-allowed') {
                     message = 'Firebase Consoleでメール/パスワード認証を有効にしてください。';
@@ -1579,7 +1853,7 @@
             });
         }
 
-        // ---- メモ帳（フォルダ・自由記述・写真）----
+// ---- メモ帳（フォルダ・自由記述・写真）----
         const NOTE_KEY = 'onsenTodoNotes';
         const NFOLDER_KEY = 'onsenTodoNoteFolders';
         const NOTE_LIMIT = 800000; // Firestoreの1ドキュメント(約1MB)に収めるための目安（文字数）
