@@ -22,7 +22,8 @@
             background: #f5f7fa;
             height: 100%;
             margin: 0;
-            overflow: hidden; /* 画面全体がずれたり横に揺れたりしないように */
+            overflow: hidden;
+            /* 画面全体がずれたり横に揺れたりしないように */
             overscroll-behavior: none;
         }
 
@@ -586,6 +587,7 @@
             box-sizing: border-box;
             background: #f5f7fa;
         }
+
         #authCard {
             width: 100%;
             max-width: 360px;
@@ -593,11 +595,25 @@
             box-sizing: border-box;
             background: #fff;
             border-radius: 14px;
-            box-shadow: 0 8px 28px rgba(0,0,0,.10);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, .10);
         }
-        #authCard h2 { margin: 0 0 8px; text-align: center; }
-        #authCard p { color: #536273; line-height: 1.6; }
-        #authCard label { display: block; margin: 14px 0 5px; font-size: 14px; }
+
+        #authCard h2 {
+            margin: 0 0 8px;
+            text-align: center;
+        }
+
+        #authCard p {
+            color: #536273;
+            line-height: 1.6;
+        }
+
+        #authCard label {
+            display: block;
+            margin: 14px 0 5px;
+            font-size: 14px;
+        }
+
         #authCard input {
             display: block;
             width: 100%;
@@ -607,6 +623,7 @@
             border-radius: 7px;
             font-size: 16px;
         }
+
         #authCard button {
             width: 100%;
             margin-top: 12px;
@@ -618,11 +635,18 @@
             font-size: 15px;
             cursor: pointer;
         }
+
         #authCard button.secondary {
             background: #edf2f7;
             color: #2d3748;
         }
-        #authMessage { min-height: 1.5em; font-size: 13px; overflow-wrap: anywhere; }
+
+        #authMessage {
+            min-height: 1.5em;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
         #accountBar {
             display: none;
             padding: 14px 16px;
@@ -660,6 +684,7 @@
                 </ons-toolbar>
                 <ons-list>
                     <ons-list-item tappable onclick="openGenres()">ジャンルの管理</ons-list-item>
+                    <ons-list-item tappable onclick="enableNotifications()">通知を有効にする</ons-list-item>
                     <ons-list-item tappable onclick="openHelp()">使い方</ons-list-item>
                     <ons-list-item tappable onclick="closeMenu()">メニューを閉じる</ons-list-item>
                 </ons-list>
@@ -687,6 +712,13 @@
                 <input id="taskDue" class="native-field" type="date" aria-label="期限の日付">
                 <input id="taskTime" class="native-field" type="time" aria-label="期限の時刻（任意）">
             </div>
+            <label class="field-label" for="taskRepeat">繰り返し（期限が必要）</label>
+            <select id="taskRepeat" class="native-field">
+                <option value="">なし</option>
+                <option value="daily">毎日</option>
+                <option value="weekly">毎週</option>
+                <option value="monthly">毎月</option>
+            </select>
             <span class="field-label">ジャンル</span>
             <div id="addGenreBar" class="genre-bar"></div>
             <div class="form-options">
@@ -781,6 +813,10 @@
         <ons-page>
             <div class="page-content">
                 <p class="intro">完了したタスクです。チェックを外すと「ToDo」に戻ります。</p>
+                <div class="dialog-actions" style="justify-content:flex-start;margin-bottom:8px">
+                    <ons-button modifier="light" onclick="cleanupDone(30)">30日より前を削除</ons-button>
+                    <ons-button modifier="light" onclick="cleanupDone(0)">すべて削除</ons-button>
+                </div>
                 <div class="genre-bar" data-genre-filter></div>
                 <div id="summaryDone" class="summary"></div>
                 <div id="doneList"></div>
@@ -828,9 +864,12 @@
                 <div class="left"><ons-back-button>戻る</ons-back-button></div>
                 <div class="center">メモ</div>
                 <div class="right">
-                    <ons-toolbar-button id="notePhotoBtn" aria-label="写真を入れる"><ons-icon icon="md-camera"></ons-icon></ons-toolbar-button>
-                    <ons-toolbar-button id="noteMoveBtn" aria-label="フォルダを移動"><ons-icon icon="md-folder"></ons-icon></ons-toolbar-button>
-                    <ons-toolbar-button id="noteDelBtn" aria-label="メモを削除"><ons-icon icon="md-delete"></ons-icon></ons-toolbar-button>
+                    <ons-toolbar-button id="notePhotoBtn" aria-label="写真を入れる"><ons-icon
+                            icon="md-camera"></ons-icon></ons-toolbar-button>
+                    <ons-toolbar-button id="noteMoveBtn" aria-label="フォルダを移動"><ons-icon
+                            icon="md-folder"></ons-icon></ons-toolbar-button>
+                    <ons-toolbar-button id="noteDelBtn" aria-label="メモを削除"><ons-icon
+                            icon="md-delete"></ons-icon></ons-toolbar-button>
                 </div>
             </ons-toolbar>
             <input type="file" id="notePhotoInput" accept="image/*" multiple hidden>
@@ -874,10 +913,15 @@
                     <li>ジャンル（仕事・買い物など）は、名前を自分で入力し、10色から色を選んで作れます。画面上部やタスク追加画面の「＋」、またはメニューの「ジャンルの管理」から追加できます（名前・色の変更や削除は、上部の「✎
                         編集」かメニューの「ジャンルの管理」で行えます）。上部のボタンで絞り込め、タスクのジャンル名をタップすると付け替えられます。</li>
                     <li>カレンダーでは、期限があるタスクの日に印が付きます。日付を押すと、その日のタスクが下に表示されます（印の青は未完了、赤は期限切れ、灰色は完了済み）。</li>
-                    <li>「メモ」タブは、iPhoneのメモのように使えます。フォルダを作り、その中に白紙のメモを書きます。メモを開くと自由に書き換えられ（自動で保存されます）、右上の📷で写真を入れる、📁でフォルダを移す、🗑で削除ができます。写真をタップすると削除できます。メモ・ジャンル管理・使い方の画面では、画面を横にスワイプしても前の画面に戻れます。</li>
+                    <li>「メモ」タブは、iPhoneのメモのように使えます。フォルダを作り、その中に白紙のメモを書きます。メモを開くと自由に書き換えられ（自動で保存されます）、右上の📷で写真を入れる、📁でフォルダを移す、🗑で削除ができます。写真をタップすると削除できます。メモ・ジャンル管理・使い方の画面では、画面を横にスワイプしても前の画面に戻れます。
+                    </li>
                     <li>タスク一覧の上にある「📁 フォルダ表示」を押すと、タスクがジャンルごとのフォルダにまとまります。フォルダの見出しをタップすると開閉できます（もう一度押すと元の一覧に戻ります）。</li>
                     <li>作ったタスクは「編集」を押すと、内容・メモ・期限・ジャンル・優先度を変更できます。</li>
                     <li>不要なタスクは「削除」を押します。</li>
+                    <li>カレンダーは、左右にスワイプすると月を移動できます。同じ日付を2回タップすると、その日のタスクを追加できます。</li>
+                    <li>追加画面の「繰り返し」を選ぶと、完了にしたときに次の予定が自動で作られます（毎日・毎週・毎月）。</li>
+                    <li>時刻つきのタスクは、期限の10分前に通知されます。メニューの「通知を有効にする」を一度押してください。通知はアプリを開いている間だけ届きます。</li>
+                    <li>「完了」タブの上のボタンで、完了したタスクをまとめて削除できます。</li>
                 </ol>
                 <p>重要なタスクは上に、同じ重要度なら優先度の高い順に並びます。</p>
             </div>
@@ -1087,8 +1131,8 @@
                 } else if (error.code === 'auth/weak-password') {
                     message = 'パスワードは6文字以上にしてください。';
                 } else if (error.code === 'auth/invalid-credential' ||
-                           error.code === 'auth/wrong-password' ||
-                           error.code === 'auth/user-not-found') {
+                    error.code === 'auth/wrong-password' ||
+                    error.code === 'auth/user-not-found') {
                     message = 'メールアドレスまたはパスワードを確認してください。';
                 } else if (error.code === 'auth/operation-not-allowed') {
                     message = 'Firebase Consoleでメール/パスワード認証を有効にしてください。';
@@ -1150,7 +1194,10 @@
                             memo: typeof t.memo === 'string' ? t.memo : '',
                             genre: typeof t.genre === 'string' ? t.genre : '',
                             due: /^\d{4}-\d{2}-\d{2}$/.test(t.due) ? t.due : '',
-                            time: /^\d{2}:\d{2}$/.test(t.time) ? t.time : ''
+                            time: /^\d{2}:\d{2}$/.test(t.time) ? t.time : '',
+                            repeat: ['daily', 'weekly', 'monthly'].indexOf(t.repeat) >= 0 ? t.repeat : '',
+                            spawned: Boolean(t.spawned),
+                            doneAt: Number(t.doneAt) || 0
                         };
                     });
             } catch (e) {
@@ -1532,7 +1579,7 @@
             });
         }
 
-// ---- メモ帳（フォルダ・自由記述・写真）----
+        // ---- メモ帳（フォルダ・自由記述・写真）----
         const NOTE_KEY = 'onsenTodoNotes';
         const NFOLDER_KEY = 'onsenTodoNoteFolders';
         const NOTE_LIMIT = 800000; // Firestoreの1ドキュメント(約1MB)に収めるための目安（文字数）
@@ -1974,6 +2021,7 @@
             document.getElementById('taskMemo').value = '';
             document.getElementById('taskDue').value = '';
             document.getElementById('taskTime').value = '';
+            document.getElementById('taskRepeat').value = '';
             document.getElementById('priority').value = 3;
             document.getElementById('important').checked = false;
             updatePriority();
@@ -1988,6 +2036,7 @@
             document.getElementById('taskMemo').value = task.memo || '';
             document.getElementById('taskDue').value = task.due || '';
             document.getElementById('taskTime').value = task.time || '';
+            document.getElementById('taskRepeat').value = task.repeat || '';
             document.getElementById('priority').value = task.priority;
             document.getElementById('important').checked = task.important;
             updatePriority();
@@ -2023,6 +2072,13 @@
                 return;
             }
 
+            const repeatValue = document.getElementById('taskRepeat').value;
+            if (repeatValue && !dueInput.value) {
+                ons.notification.toast('繰り返しには期限の日付が必要です', { timeout: 2000 });
+                dueInput.focus();
+                return;
+            }
+
             const fields = {
                 text: text,
                 priority: Number(range.value),
@@ -2030,7 +2086,8 @@
                 memo: memoInput.value.trim(),
                 genre: genreById(addGenre) ? addGenre : '',
                 due: dueInput.value,
-                time: timeInput.value
+                time: timeInput.value,
+                repeat: repeatValue
             };
 
             if (editingTaskId !== null) {
@@ -2113,6 +2170,26 @@
             renderCalendar();
         }
 
+        function bindCalendarSwipe(grid) {
+            if (grid.dataset.swipe) return;
+            grid.dataset.swipe = '1';
+            let sx = 0, sy = 0;
+            // タブの横スワイプと混ざらないよう、ここで止める
+            grid.addEventListener('touchstart', function (e) {
+                e.stopPropagation();
+                sx = e.touches[0].clientX;
+                sy = e.touches[0].clientY;
+            }, { passive: true });
+            grid.addEventListener('touchmove', function (e) { e.stopPropagation(); }, { passive: true });
+            grid.addEventListener('touchend', function (e) {
+                const p = e.changedTouches[0];
+                const dx = p.clientX - sx, dy = p.clientY - sy;
+                if (Math.abs(dx) > 60 && Math.abs(dy) < Math.abs(dx) * 0.5) changeMonth(dx < 0 ? 1 : -1);
+            }, { passive: true });
+        }
+
+        let lastTap = { key: '', time: 0 };
+
         function chipTextColor(hex) {
             const n = parseInt(hex.slice(1), 16);
             const r = n >> 16, g = (n >> 8) & 255, b = n & 255;
@@ -2129,6 +2206,7 @@
             if (!grid || !title || !heading || !dayList || !dayEmpty) return;
 
             title.textContent = calYear + '年' + (calMonth + 1) + '月';
+            bindCalendarSwipe(grid);
             grid.replaceChildren();
 
             ['日', '月', '火', '水', '木', '金', '土'].forEach(function (w, i) {
@@ -2197,8 +2275,11 @@
                 }
 
                 button.addEventListener('click', function () {
+                    const doubleTap = lastTap.key === key && Date.now() - lastTap.time < 400;
+                    lastTap = { key: key, time: doubleTap ? 0 : Date.now() };
                     calSelected = key;
                     renderCalendar();
+                    if (doubleTap) openAddDialog(); // 同じ日を2回タップでその日のタスクを追加
                 });
                 grid.appendChild(button);
             }
@@ -2248,6 +2329,15 @@
             checkbox.checked = task.completed;
             checkbox.addEventListener('change', function () {
                 task.completed = checkbox.checked; // 配列内のオブジェクトを直接更新
+                task.doneAt = task.completed ? Date.now() : 0;
+                if (task.completed && task.repeat && task.due && !task.spawned) {
+                    const nextDue = nextDueKey(task);
+                    task.spawned = true;
+                    tasks.push(Object.assign({}, task, {
+                        id: newId(), completed: false, doneAt: 0, spawned: false, due: nextDue
+                    }));
+                    ons.notification.toast('次の予定（' + nextDue.replace(/-/g, '/') + '）を作りました', { timeout: 2500 });
+                }
                 saveTasks();
                 // ToDo⇄完了のタブでは、行が消えて移ることが分かるよう少し薄くしてから描画し直す
                 const listId = item.dataset.list || '';
@@ -2277,6 +2367,18 @@
                 due.className = 'task-details task-due' + (isOverdue(task) ? ' overdue' : '');
                 due.textContent = '期限 ' + formatDueLabel(task) + (isOverdue(task) ? '（期限切れ）' : '');
                 textArea.appendChild(due);
+            }
+            const extra = [];
+            if (task.repeat) extra.push('🔁 ' + { daily: '毎日', weekly: '毎週', monthly: '毎月' }[task.repeat]);
+            if (task.completed && task.doneAt) {
+                const dd = new Date(task.doneAt);
+                extra.push('完了 ' + (dd.getMonth() + 1) + '/' + dd.getDate());
+            }
+            if (extra.length > 0) {
+                const info = document.createElement('small');
+                info.className = 'task-details';
+                info.textContent = extra.join(' ・');
+                textArea.appendChild(info);
             }
             if (task.memo) {
                 const memo = document.createElement('div');
@@ -2427,6 +2529,102 @@
             renderNotes();
         }
 
+        // ---- 繰り返しタスク：次の期限日を求める ----
+        function nextDueKey(task) {
+            const p = task.due.split('-').map(Number);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            for (let n = 1; n < 1000; n++) {
+                let d;
+                if (task.repeat === 'daily') {
+                    d = new Date(p[0], p[1] - 1, p[2] + n);
+                } else if (task.repeat === 'weekly') {
+                    d = new Date(p[0], p[1] - 1, p[2] + 7 * n);
+                } else {
+                    const last = new Date(p[0], p[1] + n, 0).getDate(); // 31日→30日の月などに対応
+                    d = new Date(p[0], p[1] - 1 + n, Math.min(p[2], last));
+                }
+                if (d >= today) return toDateKey(d); // 溜まっていても今日以降の最初の日にする
+            }
+            return task.due;
+        }
+
+        // ---- 完了タスクの整理 ----
+        function cleanupDone(days) {
+            const limit = Date.now() - days * 86400000;
+            const targets = tasks.filter(function (t) {
+                return t.completed && (days === 0 || (t.doneAt || 0) < limit);
+            });
+            if (targets.length === 0) {
+                ons.notification.toast('削除する完了タスクはありません', { timeout: 2000 });
+                return;
+            }
+            ons.notification.confirm(
+                '完了したタスク' + targets.length + '件を削除しますか？（元に戻せません）',
+                { buttonLabels: ['キャンセル', '削除'] }
+            ).then(function (index) {
+                if (index !== 1) return;
+                tasks = tasks.filter(function (t) { return targets.indexOf(t) < 0; });
+                saveTasks();
+                renderTasks();
+            });
+        }
+
+        // ---- 期限のリマインド（アプリを開いている間だけ動作）----
+        const NOTIFIED_KEY = 'onsenTodoNotified';
+        const REMIND_MIN = 10; // 期限の何分前に知らせるか
+
+        function loadNotified() {
+            try { return JSON.parse(localStorage.getItem(NOTIFIED_KEY)) || {}; } catch (e) { return {}; }
+        }
+
+        function enableNotifications() {
+            closeMenu();
+            if (!('Notification' in window)) {
+                ons.notification.alert('この環境は通知に対応していません。期限が近いときはアプリ内に表示します。');
+                return;
+            }
+            Notification.requestPermission().then(function (p) {
+                ons.notification.toast(p === 'granted' ? '通知をオンにしました' : '通知が許可されませんでした', { timeout: 2500 });
+            });
+        }
+
+        function checkReminders() {
+            const notified = loadNotified();
+            const now = Date.now();
+            let changed = false;
+            tasks.forEach(function (task) {
+                if (task.completed || !task.time) return;
+                const due = parseDue(task);
+                if (!due) return;
+                const mark = task.id + '|' + task.due + ' ' + task.time;
+                const diff = due.getTime() - now;
+                // 通知済み、まだ先、1時間以上過ぎたものは対象外
+                if (notified[mark] || diff > REMIND_MIN * 60000 || diff < -3600000) return;
+                notified[mark] = now;
+                changed = true;
+                const msg = (diff > 0 ? 'あと' + Math.ceil(diff / 60000) + '分：' : '期限です：') + task.text;
+                if (window.Notification && Notification.permission === 'granted') {
+                    try { new Notification('ToDoリスト', { body: msg }); } catch (e) { /* 通知できない環境では画面内の表示だけ */ }
+                }
+                ons.notification.toast(msg, { timeout: 6000 });
+            });
+            Object.keys(notified).forEach(function (k) {
+                if (notified[k] < now - 7 * 86400000) { delete notified[k]; changed = true; }
+            });
+            if (changed) {
+                try { localStorage.setItem(NOTIFIED_KEY, JSON.stringify(notified)); } catch (e) { /* 次回また試す */ }
+            }
+        }
+
+        function startReminders() {
+            setTimeout(checkReminders, 3000); // クラウドのデータが入ってから
+            setInterval(checkReminders, 30000);
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) checkReminders();
+            });
+        }
+
         ons.ready(function () {
             // ページ（各タブ）が生成されるたびに描画する。
             // これで再読み込み直後も、保存済みタスクが最初から表示される。
@@ -2492,6 +2690,7 @@
             });
 
             renderTasks();
+            startReminders();
         });
     </script>
 </body>
