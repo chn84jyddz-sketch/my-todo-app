@@ -14,7 +14,8 @@
     <script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore-compat.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
     <style>
         html {
             -webkit-text-size-adjust: 100%;
@@ -25,7 +26,8 @@
             background: #f5f7fa;
             height: 100%;
             margin: 0;
-            overflow: hidden; /* 画面全体がずれたり横に揺れたりしないように */
+            overflow: hidden;
+            /* 画面全体がずれたり横に揺れたりしないように */
             overscroll-behavior: none;
         }
 
@@ -589,6 +591,7 @@
             box-sizing: border-box;
             background: #f5f7fa;
         }
+
         #authCard {
             width: 100%;
             max-width: 360px;
@@ -596,11 +599,25 @@
             box-sizing: border-box;
             background: #fff;
             border-radius: 14px;
-            box-shadow: 0 8px 28px rgba(0,0,0,.10);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, .10);
         }
-        #authCard h2 { margin: 0 0 8px; text-align: center; }
-        #authCard p { color: #536273; line-height: 1.6; }
-        #authCard label { display: block; margin: 14px 0 5px; font-size: 14px; }
+
+        #authCard h2 {
+            margin: 0 0 8px;
+            text-align: center;
+        }
+
+        #authCard p {
+            color: #536273;
+            line-height: 1.6;
+        }
+
+        #authCard label {
+            display: block;
+            margin: 14px 0 5px;
+            font-size: 14px;
+        }
+
         #authCard input {
             display: block;
             width: 100%;
@@ -610,6 +627,7 @@
             border-radius: 7px;
             font-size: 16px;
         }
+
         #authCard button {
             width: 100%;
             margin-top: 12px;
@@ -621,11 +639,18 @@
             font-size: 15px;
             cursor: pointer;
         }
+
         #authCard button.secondary {
             background: #edf2f7;
             color: #2d3748;
         }
-        #authMessage { min-height: 1.5em; font-size: 13px; overflow-wrap: anywhere; }
+
+        #authMessage {
+            min-height: 1.5em;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
         #accountBar {
             display: none;
             padding: 14px 16px;
@@ -648,7 +673,15 @@
             --font-title: 'Shippori Mincho', 'Hiragino Mincho ProN', serif;
         }
 
-        body, ons-page, .page, ons-button, ons-list-item, button, input, textarea, select {
+        body,
+        ons-page,
+        .page,
+        ons-button,
+        ons-list-item,
+        button,
+        input,
+        textarea,
+        select {
             font-family: var(--font-body);
         }
 
@@ -874,7 +907,7 @@
             color: #fff !important;
         }
 
-        .checkbox__input:checked + .checkbox__checkmark {
+        .checkbox__input:checked+.checkbox__checkmark {
             background-color: var(--ink);
             border-color: var(--ink);
         }
@@ -1010,10 +1043,12 @@
             <ons-input id="taskInput" type="text" modifier="underbar" placeholder="タスクを入力" float></ons-input>
             <label class="field-label" for="taskMemo">メモ（任意）</label>
             <textarea id="taskMemo" class="native-field" rows="3" placeholder="詳細や持ち物など"></textarea>
-            <label class="field-label" for="taskDue">期限（任意）</label>
+            <label class="field-label" for="taskDue">日付・期限（任意）</label>
+            <input id="taskDue" class="native-field" type="date" aria-label="期限の日付">
+            <span class="field-label">開始時刻 〜 終了時刻（任意）</span>
             <div class="date-row">
-                <input id="taskDue" class="native-field" type="date" aria-label="期限の日付">
-                <input id="taskTime" class="native-field" type="time" aria-label="期限の時刻（任意）">
+                <input id="taskTime" class="native-field" type="time" aria-label="開始時刻">
+                <input id="taskEndTime" class="native-field" type="time" aria-label="終了時刻">
             </div>
             <label class="field-label" for="taskRepeat">繰り返し（期限が必要）</label>
             <select id="taskRepeat" class="native-field">
@@ -1167,9 +1202,12 @@
                 <div class="left"><ons-back-button>戻る</ons-back-button></div>
                 <div class="center">メモ</div>
                 <div class="right">
-                    <ons-toolbar-button id="notePhotoBtn" aria-label="写真を入れる"><ons-icon icon="md-camera"></ons-icon></ons-toolbar-button>
-                    <ons-toolbar-button id="noteMoveBtn" aria-label="フォルダを移動"><ons-icon icon="md-folder"></ons-icon></ons-toolbar-button>
-                    <ons-toolbar-button id="noteDelBtn" aria-label="メモを削除"><ons-icon icon="md-delete"></ons-icon></ons-toolbar-button>
+                    <ons-toolbar-button id="notePhotoBtn" aria-label="写真を入れる"><ons-icon
+                            icon="md-camera"></ons-icon></ons-toolbar-button>
+                    <ons-toolbar-button id="noteMoveBtn" aria-label="フォルダを移動"><ons-icon
+                            icon="md-folder"></ons-icon></ons-toolbar-button>
+                    <ons-toolbar-button id="noteDelBtn" aria-label="メモを削除"><ons-icon
+                            icon="md-delete"></ons-icon></ons-toolbar-button>
                 </div>
             </ons-toolbar>
             <input type="file" id="notePhotoInput" accept="image/*" multiple hidden>
@@ -1205,7 +1243,7 @@
                 <h2>ToDoリストの使い方</h2>
                 <ol>
                     <li>右下の「＋」ボタンを押します。</li>
-                    <li>タスクを書き、必要ならメモと期限（日付・時刻）を入れ、優先度を選びます。重要なタスクはスイッチをONにします。</li>
+                    <li>タスクを書き、必要ならメモ、日付、開始時刻・終了時刻を入れ、優先度を選びます。重要なタスクはスイッチをONにします。</li>
                     <li>「追加」を押す（またはEnterキー）と登録されます。</li>
                     <li>終わったタスクはチェックを入れます。</li>
                     <li>タブで「Today」「ToDo」「完了」「カレンダー」「メモ」を切り替えます。「Today」には期限が今日で未完了のタスクだけが表示されます。TodayやToDoタブでチェックを入れると、そのタスクは消えて「完了」タブに移ります。
@@ -1213,13 +1251,14 @@
                     <li>ジャンル（仕事・買い物など）は、名前を自分で入力し、10色から色を選んで作れます。画面上部やタスク追加画面の「＋」、またはメニューの「ジャンルの管理」から追加できます（名前・色の変更や削除は、上部の「✎
                         編集」かメニューの「ジャンルの管理」で行えます）。上部のボタンで絞り込め、タスクのジャンル名をタップすると付け替えられます。</li>
                     <li>カレンダーでは、期限があるタスクの日に印が付きます。日付を押すと、その日のタスクが下に表示されます（印の青は未完了、赤は期限切れ、灰色は完了済み）。</li>
-                    <li>「メモ」タブは、iPhoneのメモのように使えます。フォルダを作り、その中に白紙のメモを書きます。メモを開くと自由に書き換えられ（自動で保存されます）、右上の📷で写真を入れる、📁でフォルダを移す、🗑で削除ができます。写真をタップすると削除できます。メモ・ジャンル管理・使い方の画面では、画面を横にスワイプしても前の画面に戻れます。</li>
+                    <li>「メモ」タブは、iPhoneのメモのように使えます。フォルダを作り、その中に白紙のメモを書きます。メモを開くと自由に書き換えられ（自動で保存されます）、右上の📷で写真を入れる、📁でフォルダを移す、🗑で削除ができます。写真をタップすると削除できます。メモ・ジャンル管理・使い方の画面では、画面を横にスワイプしても前の画面に戻れます。
+                    </li>
                     <li>タスク一覧の上にある「📁 フォルダ表示」を押すと、タスクがジャンルごとのフォルダにまとまります。フォルダの見出しをタップすると開閉できます（もう一度押すと元の一覧に戻ります）。</li>
                     <li>作ったタスクは「編集」を押すと、内容・メモ・期限・ジャンル・優先度を変更できます。</li>
                     <li>不要なタスクは「削除」を押します。</li>
                     <li>カレンダーは、左右にスワイプすると月を移動できます。同じ日付を2回タップすると、その日のタスクを追加できます。</li>
                     <li>追加画面の「繰り返し」を選ぶと、完了にしたときに次の予定が自動で作られます（毎日・毎週・毎月）。</li>
-                    <li>時刻つきのタスクは、期限の10分前に通知されます。メニューの「通知を有効にする」を一度押してください。通知はアプリを開いている間だけ届きます。</li>
+                    <li>開始時刻つきのタスクは、開始の10分前に通知されます。メニューの「通知を有効にする」を一度押してください。通知はアプリを開いている間だけ届きます。</li>
                     <li>「完了」タブの上のボタンで、完了したタスクをまとめて削除できます。</li>
                 </ol>
                 <p>重要なタスクは上に、同じ重要度なら優先度の高い順に並びます。</p>
@@ -1430,8 +1469,8 @@
                 } else if (error.code === 'auth/weak-password') {
                     message = 'パスワードは6文字以上にしてください。';
                 } else if (error.code === 'auth/invalid-credential' ||
-                           error.code === 'auth/wrong-password' ||
-                           error.code === 'auth/user-not-found') {
+                    error.code === 'auth/wrong-password' ||
+                    error.code === 'auth/user-not-found') {
                     message = 'メールアドレスまたはパスワードを確認してください。';
                 } else if (error.code === 'auth/operation-not-allowed') {
                     message = 'Firebase Consoleでメール/パスワード認証を有効にしてください。';
@@ -1494,6 +1533,7 @@
                             genre: typeof t.genre === 'string' ? t.genre : '',
                             due: /^\d{4}-\d{2}-\d{2}$/.test(t.due) ? t.due : '',
                             time: /^\d{2}:\d{2}$/.test(t.time) ? t.time : '',
+                            endTime: /^\d{2}:\d{2}$/.test(t.endTime) ? t.endTime : '',
                             repeat: ['daily', 'weekly', 'monthly'].indexOf(t.repeat) >= 0 ? t.repeat : '',
                             spawned: Boolean(t.spawned),
                             doneAt: Number(t.doneAt) || 0
@@ -1878,7 +1918,7 @@
             });
         }
 
-// ---- メモ帳（フォルダ・自由記述・写真）----
+        // ---- メモ帳（フォルダ・自由記述・写真）----
         const NOTE_KEY = 'onsenTodoNotes';
         const NFOLDER_KEY = 'onsenTodoNoteFolders';
         const NOTE_LIMIT = 800000; // Firestoreの1ドキュメント(約1MB)に収めるための目安（文字数）
@@ -2320,6 +2360,7 @@
             document.getElementById('taskMemo').value = '';
             document.getElementById('taskDue').value = '';
             document.getElementById('taskTime').value = '';
+            document.getElementById('taskEndTime').value = '';
             document.getElementById('taskRepeat').value = '';
             document.getElementById('priority').value = 3;
             document.getElementById('important').checked = false;
@@ -2335,6 +2376,7 @@
             document.getElementById('taskMemo').value = task.memo || '';
             document.getElementById('taskDue').value = task.due || '';
             document.getElementById('taskTime').value = task.time || '';
+            document.getElementById('taskEndTime').value = task.endTime || '';
             document.getElementById('taskRepeat').value = task.repeat || '';
             document.getElementById('priority').value = task.priority;
             document.getElementById('important').checked = task.important;
@@ -2371,6 +2413,18 @@
                 return;
             }
 
+            const endInput = document.getElementById('taskEndTime');
+            if (endInput.value && !timeInput.value) {
+                ons.notification.toast('終了時刻を入れるときは開始時刻も入れてください', { timeout: 2200 });
+                timeInput.focus();
+                return;
+            }
+            if (endInput.value && endInput.value <= timeInput.value) {
+                ons.notification.toast('終了時刻は開始時刻より後にしてください', { timeout: 2200 });
+                endInput.focus();
+                return;
+            }
+
             const repeatValue = document.getElementById('taskRepeat').value;
             if (repeatValue && !dueInput.value) {
                 ons.notification.toast('繰り返しには期限の日付が必要です', { timeout: 2000 });
@@ -2386,6 +2440,7 @@
                 genre: genreById(addGenre) ? addGenre : '',
                 due: dueInput.value,
                 time: timeInput.value,
+                endTime: endInput.value,
                 repeat: repeatValue
             };
 
@@ -2430,14 +2485,19 @@
             const start = parseDue(task);
             if (!start || task.completed) return false;
             // 時刻なしの期限は、その日の終わりまで有効
-            const limit = task.time
-                ? start
-                : new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+            let limit = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+            if (task.time) {
+                limit = start;
+                if (task.endTime) {
+                    const e = task.endTime.split(':').map(Number);
+                    limit = new Date(start.getFullYear(), start.getMonth(), start.getDate(), e[0] || 0, e[1] || 0);
+                }
+            }
             return limit < new Date();
         }
 
         function formatDueLabel(task) {
-            return task.due.replace(/-/g, '/') + (task.time ? ' ' + task.time : '');
+            return task.due.replace(/-/g, '/') + (task.time ? ' ' + task.time : '') + (task.endTime ? '〜' + task.endTime : '');
         }
 
         // ---- アプリ内カレンダー（月表示）----
@@ -2645,7 +2705,9 @@
             heading.textContent = parts[0] + '年' + parts[1] + '月' + parts[2] + '日のタスク'
                 + (holidayName(calSelected) ? '（' + holidayName(calSelected) + '）' : '');
             dayList.replaceChildren();
-            const selectedTasks = sortedTasks(byDate[calSelected] || []);
+            const selectedTasks = sortedTasks(byDate[calSelected] || []).sort(function (a, b) {
+                return (a.time || '99:99') < (b.time || '99:99') ? -1 : (a.time || '99:99') > (b.time || '99:99') ? 1 : 0;
+            });
             if (selectedTasks.length === 0) {
                 dayEmpty.textContent = 'この日のタスクはありません。右下の「＋」で追加できます。';
                 dayEmpty.hidden = false;
@@ -2722,7 +2784,7 @@
             if (task.due) {
                 const due = document.createElement('small');
                 due.className = 'task-details task-due' + (isOverdue(task) ? ' overdue' : '');
-                due.textContent = '期限 ' + formatDueLabel(task) + (isOverdue(task) ? '（期限切れ）' : '');
+                due.textContent = (task.time ? '予定 ' : '期限 ') + formatDueLabel(task) + (isOverdue(task) ? '（期限切れ）' : '');
                 textArea.appendChild(due);
             }
             const extra = [];
