@@ -846,24 +846,32 @@
             font-weight: 700;
         }
 
-        .button:not(.button--quiet):not(.button--light):not(.button--outline) {
+        /* ボタンの種類は modifier の指定で見分ける（iOS・Androidどちらでも同じ見た目に） */
+        ons-button:not([modifier~="quiet"]):not([modifier~="light"]):not([modifier~="outline"]) {
             background-color: var(--ink);
             color: #fff;
         }
 
-        .button--quiet {
-            color: var(--ink);
+        ons-button[modifier~="quiet"] {
+            background: transparent !important;
+            color: var(--ink) !important;
         }
 
-        .button--light {
+        ons-button[modifier~="light"] {
             border: 1px solid var(--line);
-            background: var(--surface);
-            color: var(--ink);
+            background: var(--surface) !important;
+            color: var(--ink) !important;
         }
 
         .fab {
-            background-color: var(--ink) !important;
-            box-shadow: 0 6px 18px rgba(31, 42, 55, 0.28);
+            background-color: var(--accent) !important;
+            box-shadow: 0 6px 18px rgba(47, 75, 124, 0.4);
+        }
+
+        .fab,
+        .fab ons-icon,
+        .fab .fab__icon {
+            color: #fff !important;
         }
 
         .checkbox__input:checked + .checkbox__checkmark {
@@ -932,6 +940,23 @@
             border: 1px solid var(--line);
             background: var(--paper);
             color: var(--ink);
+        }
+
+        /* Android（Material）の表示に合わせた調整 */
+        .fab {
+            background-color: var(--accent) !important;
+        }
+
+        .fab,
+        .fab ons-icon,
+        .fab__icon {
+            color: #fff !important;
+        }
+
+        .button--material--flat {
+            background-color: transparent !important;
+            color: var(--ink) !important;
+            box-shadow: none;
         }
     </style>
 </head>
